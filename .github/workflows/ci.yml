@@ -1,18 +1,76 @@
-name: CI
+# .github/workflows/ci.yml
+name: CI Pipeline
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches: [test, main]
 
 jobs:
-  build:
+  dev-to-test:
+    if: github.event.pull_request.base.ref == 'test'
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Checkout code
+        uses: actions/checkout@v3                                   # :contentReference[oaicite:0]{index=0}
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: clippy, rustfmt
-      - name: Build
-        run: cargo build --verbose
-      - name: Test
-        run: cargo test --verbose
+          components: [rustfmt, clippy]                             # :contentReference[oaicite:1]{index=1}
 
+      - name: Check formatting
+        run: cargo fmt -- --check                                  # :contentReference[oaicite:2]{index=2}
+
+      - name: Lint with Clippy
+        run: cargo clippy -- -D warnings                           # :contentReference[oaicite:3]{index=3}
+
+      - name: Static security analysis (CodeQL)
+        uses: github/codeql-action@v3
+        with:
+          languages: rust                                          # :contentReference[oaicite:4]{index=4}
+
+      - name: Dependency audit
+        uses: rustsec/cargo-audit-action@v1                        # :contentReference[oaicite:5]{index=5}
+
+      - name: SAST via Coverity Scan
+        uses: coverity/scan-action@v1                              # :contentReference[oaicite:6]{index=6}
+
+      - name: Code quality (SonarCloud)
+        uses: SonarSource/sonarcloud-github-action@v1              # :contentReference[oaicite:7]{index=7}
+
+      - name: Fuzz testing
+        uses: actions-rs/cargo-fuzz@v1                            # :contentReference[oaicite:8]{index=8}
+
+      - name: Run unit tests
+        run: cargo test -- --nocapture                            # :contentReference[oaicite:9]{index=9}
+
+  test-to-main:
+    if: github.event.pull_request.base.ref == 'main'
+    needs: dev-to-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Run integration tests
+        run: |
+          # Start service (e.g., via Docker)
+          # docker run -d --rm -p 50051:50051 file_processor_api:latest
+          # Execute integration tests against gRPC endpoint
+          cargo test --test integration -- --nocapture
+
+      - name:
+        Placeholder: DAST Security Scan
+        run: echo "DAST scan to be configured later"
+
+      - name: Manual approval
+        if: github.actor == 'datamann1013'                        # only owner may approve :contentReference[oaicite:10]{index=10}
+        uses: hmarr/auto-approve-action@v2
