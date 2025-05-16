@@ -66,11 +66,6 @@ All operations will yield `Result<T, ApiError>` via a custom `thiserror`‑based
 ### CI Pipeline
 GitHub Actions configured for build, test, Clippy, and security scans (Coverity, SonarCloud).
 
-## Getting Started
-Installation, WSL2 setup, RustRover project creation, and CI integration instructions.
-
-## Contributing
-Guidelines for code style, tests, and Pull Request process.
 
 ## License
-Specify license.
+Apache-2.0 license
