@@ -66,6 +66,18 @@ All operations will yield `Result<T, ApiError>` via a custom `thiserror`‑based
 ### CI Pipeline
 GitHub Actions configured for build, test, Clippy, and security scans (Coverity, SonarCloud).
 
+## Project Goals Checklist
+### Core Objectives
+- Develop a Rust-based gRPC service (file_processor_api)
+- Ensure secure client-server communication using mTLS 
+- Implement modular file processing capabilities 
+- Handle errors centrally and log audit trails 
+- Manage file storage using chunked streams and metadata
+
+### Deliverables
+- Fully functional Rust gRPC service 
+- Comprehensive documentation with visual aids 
+- Clear project structure facilitating scalability
 
 ## License
 Apache-2.0 license
