@@ -70,10 +70,6 @@ jobs:
           # Execute integration tests against gRPC endpoint
           cargo test --test integration -- --nocapture
 
-      - name:
-        Placeholder: DAST Security Scan
-        run: echo "DAST scan to be configured later"
-
       - name: Manual approval
         if: github.actor == 'datamann1013'                        # only owner may approve :contentReference[oaicite:10]{index=10}
         uses: hmarr/auto-approve-action@v2
