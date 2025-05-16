@@ -10,13 +10,13 @@ File processor API is a Rust binary that exposes a gRPC endpoint secured by mutu
 ```mermaid
 flowchart TD
   subgraph Client
-    A[gRPC Client\n C#, Java, C++]
+    A["gRPC Client\n (C#, Java, C++)"]
   end
 
   subgraph Server["file_processor_api\n(Rust gRPC Service)"]
     direction TB
-    B[Authentication\n mTLS]
-    C[gRPC Endpoint\n tonic]
+    B["Authentication\n (mTLS)"]
+    C["gRPC Endpoint\n (tonic)"]
     D[Request Dispatcher]
     E[File Processing Modules]
     F[Centralized Error Handler]
