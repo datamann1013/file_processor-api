@@ -9,6 +9,14 @@ on:
     branches: [ test, master ]
 
 jobs:
+  build-on-push:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build & Test
+        run: cargo test -- --nocapture
+
   dev-to-test:
     if: github.event.pull_request.base.ref == 'test'
     runs-on: ubuntu-latest
