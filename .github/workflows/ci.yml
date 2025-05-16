@@ -4,9 +4,9 @@ name: CI Pipeline
 on:
   pull_request:
     branches: [test, master]
-
+    
   push:
-    branches: [test, master]
+    branches: [ test, master ]
 
 jobs:
   dev-to-test:
@@ -21,7 +21,9 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: [rustfmt, clippy]                             # :contentReference[oaicite:1]{index=1}
+          components:
+            - rustfmt
+            - clippy                             # :contentReference[oaicite:1]{index=1}
 
       - name: Check formatting
         run: cargo fmt -- --check                                  # :contentReference[oaicite:2]{index=2}
@@ -69,6 +71,10 @@ jobs:
           # docker run -d --rm -p 50051:50051 file_processor_api:latest
           # Execute integration tests against gRPC endpoint
           cargo test --test integration -- --nocapture
+
+      - name:
+        Placeholder: DAST Security Scan
+        run: echo "DAST scan to be configured later"
 
       - name: Manual approval
         if: github.actor == 'datamann1013'                        # only owner may approve :contentReference[oaicite:10]{index=10}
