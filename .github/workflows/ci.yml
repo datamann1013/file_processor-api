@@ -3,7 +3,10 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [test, main]
+    branches: [test, master]
+
+  push:
+    branches: [test, master]
 
 jobs:
   dev-to-test:
@@ -46,8 +49,8 @@ jobs:
       - name: Run unit tests
         run: cargo test -- --nocapture                            # :contentReference[oaicite:9]{index=9}
 
-  test-to-main:
-    if: github.event.pull_request.base.ref == 'main'
+  test-to-master:
+    if: github.event.pull_request.base.ref == 'master'
     needs: dev-to-test
     runs-on: ubuntu-latest
 
