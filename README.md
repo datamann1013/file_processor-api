@@ -15,8 +15,8 @@ flowchart TD
 
     subgraph Server["file_processor_api"]
         direction TB
-        B["Authentication - mTLS"]
-        C["gRPC Endpoint - tonic"]
+        B["Authentication \- mTLS"]
+        C["gRPC Endpoint \- tonic"]
         D["Request Dispatcher"]
         E["File Processing Modules"]
         F["Centralized Error Handler"]
@@ -28,49 +28,17 @@ flowchart TD
         I["Metadata Store"]
     end
 
-    A -->|1. Establish TLS| B
-    B -->|2. Send gRPC Request| C
-    C -->|3. Dispatch to Handler| D
-    D -->|4a. Encrypt / Compress / Hash / Metadata| E
-    D -->|4b. Stream Chunks| H
-    E -->|5. Errors & Results| F
-    F -->|6. Log Event| G
-    F -->|7. Respond| C
-    G -->|8. Persist Logs| I
-    H -->|9. Read/Write| Storage
-```
+    A -->|"1\. Establish TLS"| B
+    B -->|"2\. Send gRPC Request"| C
+    C -->|"3\. Dispatch to Handler"| D
+    D -->|"4a\. Encrypt / Compress / Hash / Metadata"| E
+    D -->|"4b\. Stream Chunks"| H
+    E -->|"5\. Errors & Results"| F
+    F -->|"6\. Log Event"| G
+    F -->|"7\. Respond"| C
+    G -->|"8\. Persist Logs"| I
+    H -->|"9\. Read/Write"| Storage
 
-```mermaid
-flowchart TD
-    subgraph Client
-        A["gRPC Client"]
-    end
-
-    subgraph Server["file_processor_api"]
-        direction TB
-        B["Authentication - mTLS"]
-        C["gRPC Endpoint - tonic"]
-        D["Request Dispatcher"]
-        E["File Processing Modules"]
-        F["Centralized Error Handler"]
-        G["Audit Logger"]
-    end
-
-    subgraph Storage["Filesystem / Streams"]
-        H["Chunked Streams"]
-        I["Metadata Store"]
-    end
-
-    A -->|1. Establish TLS| B
-    B -->|2. Send gRPC Request| C
-    C -->|3. Dispatch to Handler| D
-    D -->|4a. Encrypt / Compress / Hash / Metadata| E
-    D -->|4b. Stream Chunks| H
-    E -->|5. Errors & Results| F
-    F -->|6. Log Event| G
-    F -->|7. Respond| C
-    G -->|8. Persist Logs| I
-    H -->|9. Read/Write| Storage
 ```
 
 ## Features Plan
