@@ -1,8 +1,44 @@
-# file_processor_api
+
+
+![File processor api](/documentation/images/README-header-image.png)
+
 
 ## Overview
-Short description: a Rust gRPC service for secure, high‑performance file processing.
+About
+File processor API is a Rust binary that exposes a gRPC endpoint secured by mutual TLS, ment for integration with C#, Java, and C++ backends. It processes file‑transform commands—encrypt/decrypt, compress/decompress, hash, and metadata extraction/modification—via asynchronous Rust runtimes. All logic is encapsulated in a centralized error handler.
 
+```mermaid
+flowchart TD
+  subgraph Client
+    A[gRPC Client\n C#, Java, C++]
+  end
+
+  subgraph Server["file_processor_api\n(Rust gRPC Service)"]
+    direction TB
+    B[Authentication\n mTLS]
+    C[gRPC Endpoint\n tonic]
+    D[Request Dispatcher]
+    E[File Processing Modules]
+    F[Centralized Error Handler]
+    G[Audit Logger]
+  end
+
+  subgraph Storage["Filesystem / Streams"]
+    H[Chunked Streams]
+    I[Metadata Store]
+  end
+
+  A -->|1. Establish TLS| B
+  B -->|2. Send gRPC Request| C
+  C -->|3. Dispatch to Handler| D
+  D -->|4a. Encrypt / Compress\nHash / Metadata| E
+  D -->|4b. Stream Chunks| H
+  E -->|5. Errors? & Results| F
+  F -->|6. Log Event| G
+  F -->|7. Respond| C
+  G -->|8. Persist Logs| I
+  H -->|9. Read/Write| Storage
+```
 ## Features Plan
 ### Compression and Decompression
 Compression and decompression will be implemented using `zstd` and `flate2` crates.
