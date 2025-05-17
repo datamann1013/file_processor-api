@@ -61,7 +61,7 @@ Chunked streaming will use `tokio::io::AsyncReadExt`/`AsyncWriteExt` for zero‑
 Logging using `log` + `env_logger`; audit logs will record request IDs, timestamps, and outcomes.
 
 ### Centralized Error Handling
-All operations will yield `Result<T, ApiError>` via a custom `thiserror`‑based error enum.
+![Error Handler Overview](documentation/ErrorHandler.md)
 
 ### CI Pipeline
 GitHub Actions configured for build, test, Clippy, and security scans (Coverity, SonarCloud).
