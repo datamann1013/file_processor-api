@@ -4,15 +4,15 @@ use thiserror::Error;
 use uuid::Uuid;
 
 /// Severity levels for events: Error Severe, Error Minor, Warning Severe, Warning Minor
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Severity { ES, EM, WS, WM }  // async_trait needed for async fn in traits :contentReference[oaicite:0]{index=0}
 
 /// Components of the system: Compression, Hashing, Encryption
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Component { C, H, E }  // directory‑based modules recommended for organization :contentReference[oaicite:1]{index=1}
 
 /// Actors responsible: User, Server, Network
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Actor { U, S, N }
 
 /// Simple wrapper for informational events
