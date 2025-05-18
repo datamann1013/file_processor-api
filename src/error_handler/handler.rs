@@ -49,7 +49,7 @@ where
 
         // Buffer the event
         {
-            let mut buf = self.buffer.lock().await;
+            let buf = self.buffer.lock().await;
             buf.buffer_error(&evt);
         }
 
@@ -72,4 +72,4 @@ where
 
         Ok(())
     }
-}  // spawns background rotation task separately :contentReference[oaicite:5]{index=5}
+}  // spawns background rotation task separately

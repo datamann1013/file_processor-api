@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 use uuid::Uuid;
@@ -15,7 +16,7 @@ pub enum Component { C, H, E }  // directory‑based modules recommended for org
 pub enum Actor { U, S, N }
 
 /// Simple wrapper for informational events
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LogEvent {
     pub message: String,
     pub context: Value,
@@ -23,7 +24,7 @@ pub struct LogEvent {
 }
 
 /// Detailed wrapper for warnings & errors
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorEvent {
     pub severity: Severity,
     pub component: Component,
@@ -43,4 +44,7 @@ pub enum HandlerError {
     Io(#[from] std::io::Error),
     #[error("Database error: {0}")]
     Db(#[from] sqlx::Error),
+    #[error("Serialization error: {0}")]
+    Json(#[from] serde_json::Error),
 }
+
