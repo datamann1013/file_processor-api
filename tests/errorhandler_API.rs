@@ -1,3 +1,4 @@
+use serde_json::json;
 
 #[tokio::test]
 async fn log_event_writes_info_only() {
