@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
-use uuid::Uuid;
 
 /// Severity levels for events: Error Severe, Error Minor, Warning Severe, Warning Minor
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
