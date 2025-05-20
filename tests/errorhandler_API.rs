@@ -106,24 +106,33 @@ async fn log_error_validation_fails_on_empty_message() {
 #[tokio::test]
 async fn log_error_db_failure_falls_back_to_file() {
     let mut fw = MockFileWriter::new();
-    let buf = MockBufferManager::new();
+    let mut buf = MockBufferManager::new();
     let mut db = MockDbClient::new();
 
-    // Simulate DB insert_error failing once
+    // Expect a buffer_error call
+    buf.expect_buffer_error()
+        .times(1)
+        .return_const(());
+
+    // Simulate DB insert_message success
     db.expect_insert_message()
         .times(1)
         .returning(|_| Ok(Uuid::new_v4()));
+
+    // Simulate DB insert_error failure
     db.expect_insert_error()
         .times(1)
         .returning(|_, _| Err(sqlx::Error::RowNotFound));
-    // On DB failure, a temp write must occur
+
+    // On DB failure, expect a temp write
     fw.expect_write_temp()
         .times(1)
         .returning(|_| Ok(()));
 
-    let handler = Handler::new(fw, buf, db);
+    let handler = Handler::new(fw, buf, db);    
     let evt = valid_error_event();
 
     let res = handler.log_error(evt).await;
     assert!(matches!(res, Err(HandlerError::Db(_))));
 }
+
