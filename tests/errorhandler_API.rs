@@ -1,4 +1,8 @@
-                    // brings Handler, LogEvent, ErrorEvent, HandlerError into scope
+use file_processor_api::error_handler::{
+    Handler, LogEvent, ErrorEvent, HandlerError,
+    Severity, Component, Actor,
+    FileWriter, BufferManager, DbClient,
+};                  
 use serde_json::json;
 use uuid::Uuid;
 use mockall::predicate::*;
@@ -56,7 +60,7 @@ fn valid_error_event() -> ErrorEvent {
 async fn log_event_writes_info_only() {
     let mut fw = MockFileWriter::new();
     let buf = MockBufferManager::new();
-    let db = MockDbClient::new();
+    let mut db = MockDbClient::new();
 
     // Expect exactly one JSONL write; DB never touched
     fw.expect_write_jsonl()
