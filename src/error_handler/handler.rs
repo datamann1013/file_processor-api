@@ -13,7 +13,7 @@ where
 {
     file_writer: Arc<F>,
     buffer: Arc<Mutex<B>>,
-    db: Arc<D>,
+    pub db: Arc<D>,
 }
 
 impl<F, B, D> Handler<F, B, D>
