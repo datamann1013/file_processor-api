@@ -1,5 +1,5 @@
 use crate::error_handler::types::{ErrorEvent, HandlerError, LogEvent};
-use crate::error_handler::{BufferManager, DbClient, FileWriter};
+use crate::error_handler::{BufferManager, DbClient, FileWriter, Severity};
 use serde_json::to_string;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -41,35 +41,48 @@ where
         Ok(())
     }
 
-    /// Handle warnings & errors: buffer, DB persistence, fallback, and JSONL
+    /// Handle warnings & errors: buffer, conditional DB persistence, fallback, and JSONL
     pub async fn log_error(&self, evt: ErrorEvent) -> Result<(), HandlerError> {
+        // 1. Validate
         if evt.message.is_empty() {
             return Err(HandlerError::Validation("Empty message".into()));
         }
 
-        // Buffer the event
+        // 2. Buffer the event
         {
             let buf = self.buffer.lock().await;
             buf.buffer_error(&evt);
         }
 
-        // Replay any temp‑file entries first
-        // (Implementation left to concrete DbClient)
-
-        // Ensure message exists in DB, retrieving its UUID
-        let msg_id = self.db.insert_message(&evt.message).await?;
-
-        // Try inserting the error, fallback to temp file on failure
-        if let Err(db_err) = self.db.insert_error(&evt, msg_id).await {
+        // 3. Warning Minor (WM): only JSONL, no DB calls
+        if evt.severity == Severity::WM {
             let line = to_string(&evt)?;
-            self.file_writer.write_temp(&line).await?;
-            return Err(HandlerError::Db(db_err));
+            self.file_writer.write_jsonl(&line).await?;
+            return Ok(());
         }
 
-        // Finally, append to JSONL
+        // 4. For ES, EM, WS: insert message
+        let msg_id = match self.db.insert_message(&evt.message).await {
+            Ok(id) => id,
+            Err(e) => {
+                // Fallback: write full event to temp
+                let fallback = to_string(&evt)?;
+                self.file_writer.write_temp(&fallback).await?;
+                return Err(HandlerError::Db(e));
+            }
+        };
+
+        // 5. Persist error or severe warning, fallback on DB error
+        if let Err(e) = self.db.insert_error(&evt, msg_id).await {
+            let fallback = to_string(&evt)?;
+            self.file_writer.write_temp(&fallback).await?;
+            return Err(HandlerError::Db(e));
+        }
+
+        // 6. Append to JSONL
         let line = to_string(&evt)?;
         self.file_writer.write_jsonl(&line).await?;
-
         Ok(())
     }
+
 }  // spawns background rotation task separately
