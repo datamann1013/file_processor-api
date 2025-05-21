@@ -4,15 +4,28 @@ use thiserror::Error;
 
 /// Severity levels for events: Error Severe, Error Minor, Warning Severe, Warning Minor
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Severity { ES, EM, WS, WM }  // async_trait needed for async fn in traits 
+pub enum Severity {
+    ES,
+    EM,
+    WS,
+    WM,
+} // async_trait needed for async fn in traits 
 
 /// Components of the system: Compression, Hashing, Encryption
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Component { C, H, E }  // directory‑based modules recommended for organization 
+pub enum Component {
+    C,
+    H,
+    E,
+} // directory‑based modules recommended for organization 
 
 /// Actors responsible: User, Server, Network
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Actor { U, S, N }
+pub enum Actor {
+    U,
+    S,
+    N,
+}
 
 /// Simple wrapper for informational events
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -46,4 +59,3 @@ pub enum HandlerError {
     #[error("Serialization error: {0}")]
     Json(#[from] serde_json::Error),
 }
-

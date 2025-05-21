@@ -84,5 +84,4 @@ where
         self.file_writer.write_jsonl(&line).await?;
         Ok(())
     }
-
-}  // spawns background rotation task separately
+} // spawns background rotation task separately

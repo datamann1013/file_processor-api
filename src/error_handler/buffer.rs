@@ -1,4 +1,4 @@
-use crate::error_handler::types::{LogEvent, ErrorEvent};
+use crate::error_handler::types::{ErrorEvent, LogEvent};
 
 /// Manages in‑memory circular buffers for Info, Warning, and Error context
 pub trait BufferManager: Send + Sync {
@@ -7,4 +7,4 @@ pub trait BufferManager: Send + Sync {
     fn buffer_error(&self, event: &ErrorEvent);
     /// Returns (info_buffer, warning_buffer) snapshots
     fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>);
-}  // isolates side effects for unit testing
+} // isolates side effects for unit testing

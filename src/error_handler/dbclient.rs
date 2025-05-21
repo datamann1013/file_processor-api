@@ -12,4 +12,4 @@ pub trait DbClient: Send + Sync {
         msg_id: Uuid,
     ) -> Result<(), sqlx::Error>;
     async fn replay_temp(&self, lines: Vec<String>) -> Result<(), sqlx::Error>;
-}  // SQLx for async DB backed by mTLS connections 
+} // SQLx for async DB backed by mTLS connections 

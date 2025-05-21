@@ -1,12 +1,11 @@
 use file_processor_api::error_handler::{
-    Handler, LogEvent, ErrorEvent, HandlerError,
-    Severity, Component, Actor,
-    FileWriter, BufferManager, DbClient,
+    Actor, BufferManager, Component, DbClient, ErrorEvent, FileWriter, Handler, HandlerError,
+    LogEvent, Severity,
 };
-use serde_json::json;
-use uuid::Uuid;
 use mockall::predicate::*;
 use mockall::*;
+use serde_json::json;
+use uuid::Uuid;
 
 // 1) Generate mocks for our traits:
 
@@ -42,7 +41,11 @@ mock! {
 // 2) Helper to produce a valid ErrorEvent
 
 fn valid_log_event() -> LogEvent {
-    LogEvent { message: "info".into(), context: json!({"a":1}), info_id: None }
+    LogEvent {
+        message: "info".into(),
+        context: json!({"a":1}),
+        info_id: None,
+    }
 }
 
 fn valid_error_event(sev: Severity) -> ErrorEvent {
@@ -58,10 +61,7 @@ fn valid_error_event(sev: Severity) -> ErrorEvent {
 }
 
 fn temp_lines() -> Vec<String> {
-    vec![
-        "{\"dummy\":1}".to_string(),
-        "{\"dummy\":2}".to_string(),
-    ]
+    vec!["{\"dummy\":1}".to_string(), "{\"dummy\":2}".to_string()]
 }
 
 // Tests info‑only path
@@ -105,7 +105,9 @@ async fn log_error_all_severities() {
         buf.expect_buffer_error().times(1).return_const(());
         // Only WS and ES/EM write DB
         if matches!(sev, Severity::ES | Severity::EM | Severity::WS) {
-            db.expect_insert_message().times(1).returning(|_| Ok(Uuid::new_v4()));
+            db.expect_insert_message()
+                .times(1)
+                .returning(|_| Ok(Uuid::new_v4()));
             db.expect_insert_error().times(1).returning(|_, _| Ok(()));
         }
         // JSONL always writes
@@ -130,8 +132,12 @@ async fn log_error_db_fail_fallback() {
     let mut db = MockDbClient::new();
 
     buf.expect_buffer_error().times(1).return_const(());
-    db.expect_insert_message().times(1).returning(|_| Ok(Uuid::new_v4()));
-    db.expect_insert_error().times(1).returning(|_, _| Err(sqlx::Error::RowNotFound));
+    db.expect_insert_message()
+        .times(1)
+        .returning(|_| Ok(Uuid::new_v4()));
+    db.expect_insert_error()
+        .times(1)
+        .returning(|_, _| Err(sqlx::Error::RowNotFound));
     fw.expect_write_temp().times(1).returning(|_| Ok(()));
 
     let handler = Handler::new(fw, buf, db);
@@ -149,7 +155,9 @@ async fn log_error_message_fail_fallback() {
     let mut db = MockDbClient::new();
 
     buf.expect_buffer_error().times(1).return_const(());
-    db.expect_insert_message().times(1).returning(|_| Err(sqlx::Error::RowNotFound));
+    db.expect_insert_message()
+        .times(1)
+        .returning(|_| Err(sqlx::Error::RowNotFound));
     fw.expect_write_temp().times(1).returning(|_| Ok(()));
 
     let handler = Handler::new(fw, buf, db);
@@ -169,7 +177,9 @@ async fn log_error_replay_temp_then_success() {
     buf.expect_buffer_error().times(1).return_const(());
     // Simulate existing temp lines: replay_temp called first
     db.expect_replay_temp().times(1).returning(|_l| Ok(()));
-    db.expect_insert_message().times(1).returning(|_| Ok(Uuid::new_v4()));
+    db.expect_insert_message()
+        .times(1)
+        .returning(|_| Ok(Uuid::new_v4()));
     db.expect_insert_error().times(1).returning(|_, _| Ok(()));
 
     fw.expect_write_jsonl().times(1).returning(|_| Ok(()));
@@ -210,7 +220,6 @@ async fn serialization_error_returns_json_err() {
         info_id: None,
     };
 
-
     // Since everything serializes, this will actually succeed:
     assert!(handler.log_event(evt).await.is_ok());
 }
@@ -226,18 +235,17 @@ async fn log_event_writes_info_only() {
         .times(1)
         .with(eq(r#"{"message":"test","context":{},"info_id":"INFO1"}"#))
         .returning(|_| Ok(()));
-    db.expect_insert_error().never();  // no DB calls for info-only
+    db.expect_insert_error().never(); // no DB calls for info-only
 
     let handler = Handler::new(fw, buf, db);
     let evt = LogEvent {
         message: "test".into(),
         context: json!({}),
-        info_id: Some("INFO1".into())
+        info_id: Some("INFO1".into()),
     };
 
     assert!(handler.log_event(evt).await.is_ok());
 }
-
 
 #[tokio::test]
 async fn log_error_validation_fails_on_empty_message() {
@@ -247,10 +255,10 @@ async fn log_error_validation_fails_on_empty_message() {
 
     let handler = Handler::new(fw, buf, db);
     let mut evt = valid_error_event(Severity::ES);
-    evt.message.clear();  // empty message
+    evt.message.clear(); // empty message
 
     let err = handler.log_error(evt).await.unwrap_err();
-    matches!(err, HandlerError::Validation(_));  // validation path
+    matches!(err, HandlerError::Validation(_)); // validation path
 }
 
 #[tokio::test]
@@ -271,13 +279,11 @@ async fn log_error_db_failure_falls_back_to_file() {
         .times(1)
         .returning(|_, _| Err(sqlx::Error::RowNotFound));
     // On failure, temp write is expected
-    fw.expect_write_temp()
-        .times(1)
-        .returning(|_| Ok(()));
+    fw.expect_write_temp().times(1).returning(|_| Ok(()));
 
     let handler = Handler::new(fw, buf, db);
     let evt = valid_error_event(Severity::ES);
 
     let res = handler.log_error(evt).await;
-    assert!(matches!(res, Err(HandlerError::Db(_))));  // fallback path 
+    assert!(matches!(res, Err(HandlerError::Db(_)))); // fallback path 
 }
