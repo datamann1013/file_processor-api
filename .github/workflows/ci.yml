@@ -20,42 +20,48 @@ jobs:
   dev-to-test:
     if: github.event.pull_request.base.ref == 'test'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3                                   # :contentReference[oaicite:0]{index=0}
+        uses: actions/checkout@v3
 
-      - name: Set up Rust
+      - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: rustfmt, clippy                             # :contentReference[oaicite:1]{index=1}
+          components: rustfmt, clippy
 
       - name: Check formatting
-        run: cargo fmt -- --check                                  # :contentReference[oaicite:2]{index=2}
+        run: cargo fmt -- --check
 
       - name: Lint with Clippy
-        run: cargo clippy -- -D warnings                           # :contentReference[oaicite:3]{index=3}
+        run: cargo clippy -- -D warnings
 
       - name: Static security analysis (CodeQL)
         uses: github/codeql-action@v3
         with:
-          languages: rust                                          # :contentReference[oaicite:4]{index=4}
+          languages: rust
 
       - name: Dependency audit
-        uses: rustsec/cargo-audit-action@v1                        # :contentReference[oaicite:5]{index=5}
+        uses: actions-rust-lang/audit@v1                        # cargo-audit action
 
       - name: SAST via Coverity Scan
-        uses: coverity/scan-action@v1                              # :contentReference[oaicite:6]{index=6}
+        uses: vapier/unofficial-coverity-scan-action@v1.8.0      # Unofficial Coverity Scan
 
       - name: Code quality (SonarCloud)
-        uses: SonarSource/sonarcloud-github-action@v1              # :contentReference[oaicite:7]{index=7}
+        uses: SonarSource/sonarcloud-github-action@v1
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz                            # Official cargo-fuzz CLI
 
       - name: Fuzz testing
-        uses: actions-rs/cargo-fuzz@v1                            # :contentReference[oaicite:8]{index=8}
+        run: cargo fuzz run -- -max_total_time=60
 
       - name: Run unit tests
-        run: cargo test -- --nocapture                            # :contentReference[oaicite:9]{index=9}
+        run: cargo test -- --nocapture
 
   test-to-master:
     if: github.event.pull_request.base.ref == 'master'
