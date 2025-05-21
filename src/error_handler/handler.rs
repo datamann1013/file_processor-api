@@ -12,7 +12,7 @@ where
     D: DbClient + 'static,
 {
     file_writer: Arc<F>,
-    buffer: Arc<Mutex<B>>,
+    pub(crate) buffer: Arc<Mutex<B>>,
     pub db: Arc<D>,
 }
 
@@ -83,5 +83,11 @@ where
         let line = to_string(&evt)?;
         self.file_writer.write_jsonl(&line).await?;
         Ok(())
+        
+    }
+    /// Returns the buffered snapshots of info and error events.
+    pub async fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
+        let guard = self.buffer.lock().await;
+        guard.snapshot()
     }
 } // spawns background rotation task separately
