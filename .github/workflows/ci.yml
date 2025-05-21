@@ -49,7 +49,10 @@ jobs:
         uses: actions-rust-lang/audit@v1                        # cargo-audit action
 
       - name: SAST via Coverity Scan
-        uses: vapier/unofficial-coverity-scan-action@v1.8.0      # Unofficial Coverity Scan
+        uses: vapier/coverity-scan-action@v1
+        with:
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
 
       - name: Code quality (SonarCloud)
         uses: SonarSource/sonarcloud-github-action@v1
