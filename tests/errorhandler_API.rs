@@ -191,7 +191,7 @@ async fn serialization_error_returns_json_err() {
     let db = MockDbClient::new();
 
     // Create LogEvent with non-UTF8 (simulate via invalid JSON string)
-    let evt = LogEvent {
+    LogEvent {
         message: String::from_utf8_lossy(&[0xff, 0xff]).into(),
         context: json!({}),
         info_id: None,
@@ -201,7 +201,7 @@ async fn serialization_error_returns_json_err() {
         .with(eq(r#"{"message":"ok","context":null,"info_id":null}"#))
         .times(1)
         .returning(|_| Ok(()));
-    
+
     let handler = Handler::new(fw, buf, db);
 
     let evt = LogEvent {
@@ -209,8 +209,8 @@ async fn serialization_error_returns_json_err() {
         context: serde_json::Value::Null, // still serializable
         info_id: None,
     };
-    
-    
+
+
     // Since everything serializes, this will actually succeed:
     assert!(handler.log_event(evt).await.is_ok());
 }
