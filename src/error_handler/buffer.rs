@@ -7,4 +7,4 @@ pub trait BufferManager: Send + Sync {
     fn buffer_error(&self, event: &ErrorEvent);
     /// Returns (info_buffer, warning_buffer) snapshots
     fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>);
-}  // isolates side effects for unit testing :contentReference[oaicite:3]{index=3}
+}  // isolates side effects for unit testing

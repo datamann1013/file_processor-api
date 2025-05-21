@@ -218,7 +218,7 @@ async fn log_event_writes_info_only() {
         .times(1)
         .with(eq(r#"{"message":"test","context":{},"info_id":"INFO1"}"#))
         .returning(|_| Ok(()));
-    db.expect_insert_error().never();  // no DB calls for info-only :contentReference
+    db.expect_insert_error().never();  // no DB calls for info-only 
 
     let handler = Handler::new(fw, buf, db);
     let evt = LogEvent {
@@ -242,7 +242,7 @@ async fn log_error_validation_fails_on_empty_message() {
     evt.message.clear();  // empty message
 
     let err = handler.log_error(evt).await.unwrap_err();
-    matches!(err, HandlerError::Validation(_));  // validation path :contentReference
+    matches!(err, HandlerError::Validation(_));  // validation path 
 }
 
 #[tokio::test]

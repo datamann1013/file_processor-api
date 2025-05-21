@@ -8,4 +8,4 @@ pub trait FileWriter: Send + Sync {
     async fn write_jsonl(&self, line: &str) -> io::Result<()>;
     /// Write a fallback line to a temp file when DB fails
     async fn write_temp(&self, line: &str) -> io::Result<()>;
-}  // uses async_trait for async in traits :contentReference[oaicite:2]{index=2}
+}  // uses async_trait for async in traits 

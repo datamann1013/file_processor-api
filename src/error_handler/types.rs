@@ -4,11 +4,11 @@ use thiserror::Error;
 
 /// Severity levels for events: Error Severe, Error Minor, Warning Severe, Warning Minor
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Severity { ES, EM, WS, WM }  // async_trait needed for async fn in traits :contentReference[oaicite:0]{index=0}
+pub enum Severity { ES, EM, WS, WM }  // async_trait needed for async fn in traits 
 
 /// Components of the system: Compression, Hashing, Encryption
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Component { C, H, E }  // directory‑based modules recommended for organization :contentReference[oaicite:1]{index=1}
+pub enum Component { C, H, E }  // directory‑based modules recommended for organization 
 
 /// Actors responsible: User, Server, Network
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
