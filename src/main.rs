@@ -22,13 +22,13 @@ impl FileWriter for DummyWriter {
 
 struct DummyBuffer;
 impl BufferManager for DummyBuffer {
-    fn buffer_info(&self, _event: &LogEvent) {
-        todo!()
+    fn buffer_info(&self, event: &LogEvent) {
+        println!("Buffering info: {:?}", event);
+    }
+    fn buffer_warning(&self, event: &ErrorEvent) {
+        println!("Buffering warning: {:?}", event);
     }
 
-    fn buffer_warning(&self, _event: &ErrorEvent) {
-        todo!()
-    }
 
     fn buffer_error(&self, event: &ErrorEvent) {
         println!("Buffering error: {:?}", event);
@@ -62,23 +62,27 @@ impl DbClient for DummyDb {
 
 #[tokio::main]
 async fn main() {
-    let writer = DummyWriter;
-    let buffer = DummyBuffer;
-    let db = DummyDb;
+    let handler = Handler::new(DummyWriter, DummyBuffer, DummyDb);
 
-    let handler = Handler::new(writer, buffer, db);
-
-    // Create a LogEvent
-    let log_evt = LogEvent { message: "Test log".into(), context: json!({"key":"value"}), info_id: None };
+    let log_evt = LogEvent {
+        message: "Test log".into(),
+        context: json!({"key": "value"}),
+        info_id: None,
+    };
     handler.log_event(log_evt).await.unwrap();
 
-    // Create an ErrorEvent
-    let err_evt = ErrorEvent { message: "Test error".into(), context: Default::default(), severity: Severity::EM, component: Component::H, actor: Actor::S, code: 0, stack_trace: None };
+    let err_evt = ErrorEvent {
+        message: "Test error".into(),
+        context: Default::default(),
+        severity: Severity::EM,
+        component: Component::H,
+        actor: Actor::S,
+        code: 0,
+        stack_trace: None,
+    };
     handler.log_error(err_evt).await.unwrap();
 
-    // Print snapshot
     let (infos, errors) = handler.snapshot().await;
 
     println!("Snapshots - infos: {:?}, errors: {:?}", infos, errors);
 }
-
