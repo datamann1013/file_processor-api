@@ -24,8 +24,7 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -42,16 +41,18 @@ jobs:
       - name: Dependency & license audit (cargo-deny)
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          command: check
-          arguments: --deny warnings
+          # Global flags for cargo-deny (e.g., feature combinations)
+          arguments: --all-features
+          # Flags passed specifically to the `check` subcommand
+          command:    check
+          command-arguments: --deny warnings
 
       - name: Supply-chain & security score (OSSF Scorecard)
         uses: ossf/scorecard-action@v2.4.1
         with:
-          # disable publishing results to SARIF (optional)
           publish-results: false
-          results_file: ''
-          results_format: ''
+          results_file: 'scorecard_results.json'
+          results_format: 'json'
 
       - name: Unsafe-code detector (cargo-geiger)
         run: |
@@ -73,8 +74,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -83,7 +83,6 @@ jobs:
 
       - name: Run integration tests
         run: |
-          # e.g., start service, then:
           cargo test --test integration -- --nocapture
 
       - name: Manual approval
