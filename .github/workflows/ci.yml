@@ -4,9 +4,8 @@ name: CI Pipeline
 on:
   pull_request:
     branches: [test, master]
-    
   push:
-    branches: [ test, master ]
+    branches: [test, master]
 
 jobs:
   build-on-push:
@@ -40,25 +39,21 @@ jobs:
       - name: Lint with Clippy
         run: cargo clippy -- -D warnings
 
-      - name: Static security analysis (CodeQL)
-        uses: github/codeql-action@v3
+      - name: Dependency & license audit (cargo-deny)
+        uses: EmbarkStudios/cargo-deny-action@v0.12.0
         with:
-          languages: rust
+          args: check --deny warnings
 
-      - name: Dependency audit
-        uses: actions-rust-lang/audit@v1                        # cargo-audit action
+      - name: Supply-chain & security score (Scorecard)
+        uses: google/scorecard-action@v2
 
-      - name: SAST via Coverity Scan
-        uses: vapier/coverity-scan-action@v1
-        with:
-          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
-          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
-
-      - name: Code quality (SonarCloud)
-        uses: SonarSource/sonarcloud-github-action@v1
+      - name: Unsafe-code detector (cargo-geiger)
+        run: |
+          cargo install cargo-geiger
+          cargo geiger --fail-on unsafe-cnt=0
 
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz                            # Official cargo-fuzz CLI
+        run: cargo install cargo-fuzz
 
       - name: Fuzz testing
         run: cargo fuzz run -- -max_total_time=60
@@ -75,7 +70,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Rust
+      - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -87,7 +82,6 @@ jobs:
           # Execute integration tests against gRPC endpoint
           cargo test --test integration -- --nocapture
 
-
       - name: Manual approval
-        if: github.actor == 'datamann1013'                        # only owner may approve :contentReference[oaicite:10]{index=10}
+        if: github.actor == 'datamann1013'
         uses: hmarr/auto-approve-action@v2
