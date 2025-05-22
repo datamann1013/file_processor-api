@@ -1,5 +1,3 @@
-mod error_handler;
-
 // src/main.rs
 use async_trait::async_trait;
 use file_processor_api::error_handler::{
