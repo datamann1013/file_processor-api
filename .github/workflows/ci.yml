@@ -40,12 +40,18 @@ jobs:
         run: cargo clippy -- -D warnings
 
       - name: Dependency & license audit (cargo-deny)
-        uses: EmbarkStudios/cargo-deny-action@v0.12.0
+        uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          args: check --deny warnings
+          command: check
+          arguments: --deny warnings
 
-      - name: Supply-chain & security score (Scorecard)
-        uses: google/scorecard-action@v2
+      - name: Supply-chain & security score (OSSF Scorecard)
+        uses: ossf/scorecard-action@v2.4.1
+        with:
+          # disable publishing results to SARIF (optional)
+          publish-results: false
+          results_file: ''
+          results_format: ''
 
       - name: Unsafe-code detector (cargo-geiger)
         run: |
@@ -77,9 +83,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          # Start service (e.g., via Docker)
-          # docker run -d --rm -p 50051:50051 file_processor_api:latest
-          # Execute integration tests against gRPC endpoint
+          # e.g., start service, then:
           cargo test --test integration -- --nocapture
 
       - name: Manual approval
