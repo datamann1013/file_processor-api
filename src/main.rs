@@ -1,4 +1,3 @@
-// src/main.rs
 use async_trait::async_trait;
 use file_processor_api::error_handler::{
     Actor, BufferManager, Component, DbClient, ErrorEvent, FileWriter, Handler, LogEvent, Severity,
