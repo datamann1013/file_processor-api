@@ -1,10 +1,12 @@
 mod error_handler;
 
 // src/main.rs
-use file_processor_api::error_handler::{Handler, FileWriter, BufferManager, DbClient, LogEvent, ErrorEvent, Severity, Component, Actor};
 use async_trait::async_trait;
-use uuid::Uuid;
+use file_processor_api::error_handler::{
+    Actor, BufferManager, Component, DbClient, ErrorEvent, FileWriter, Handler, LogEvent, Severity,
+};
 use serde_json::json;
+use uuid::Uuid;
 
 // Dummy implementations for traits
 struct DummyWriter;
@@ -29,7 +31,6 @@ impl BufferManager for DummyBuffer {
         println!("Buffering warning: {:?}", event);
     }
 
-
     fn buffer_error(&self, event: &ErrorEvent) {
         println!("Buffering error: {:?}", event);
     }
@@ -45,11 +46,7 @@ impl DbClient for DummyDb {
         println!("Inserting message into DB");
         Ok(Uuid::new_v4())
     }
-    async fn insert_error(
-        &self,
-        evt: &ErrorEvent,
-        msg_id: Uuid,
-    ) -> Result<(), sqlx::Error> {
+    async fn insert_error(&self, evt: &ErrorEvent, msg_id: Uuid) -> Result<(), sqlx::Error> {
         // your logic here…
         println!("Inserting error for msg_id={} evt={:?}", msg_id, evt);
         Ok(())

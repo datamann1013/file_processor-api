@@ -83,7 +83,6 @@ where
         let line = to_string(&evt)?;
         self.file_writer.write_jsonl(&line).await?;
         Ok(())
-        
     }
     /// Returns the buffered snapshots of info and error events.
     pub async fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
