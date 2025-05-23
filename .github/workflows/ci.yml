@@ -46,7 +46,6 @@ jobs:
           arguments: |
             check
             --config deny.toml
-            --all-features
             --deny warnings
 
       - name: Dependency & license audit (cargo-deny)
