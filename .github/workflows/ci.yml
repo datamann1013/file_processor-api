@@ -43,10 +43,13 @@ jobs:
         with:
           manifest-path: ./Cargo.toml
           log-level: warn
+          command: check
           arguments: |
-            check
             --config deny.toml
             --deny warnings
+          command-arguments: |
+            licenses
+            sources
 
       - name: Supply-chain & security score (OSSF Scorecard)
         uses: ossf/scorecard-action@v2.4.1
