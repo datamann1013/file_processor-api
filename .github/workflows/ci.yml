@@ -38,11 +38,14 @@ jobs:
       - name: Lint with Clippy
         run: cargo clippy -- -D warnings
 
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      - name: License & Duplicate Check
+        uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          arguments: check
           manifest-path: ./Cargo.toml
-          config: ./deny.toml
+          log-level: warn
+          arguments: check --all-features --deny warnings
+          config-path: ./deny.toml
+
 
       - name: Dependency & license audit (cargo-deny)
         uses: EmbarkStudios/cargo-deny-action@v2
