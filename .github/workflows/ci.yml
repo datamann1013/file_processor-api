@@ -38,18 +38,20 @@ jobs:
       - name: Lint with Clippy
         run: cargo clippy -- -D warnings
 
+
       - name: License & Duplicate Check
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          manifest-path: ./Cargo.toml
-          log-level: warn
-          command: check
-          arguments: |
-            --config deny.toml
-            --deny warnings
-          command-arguments: |
-            licenses
-            sources
+            manifest-path: ./Cargo.toml
+            log-level: warn
+            command: check
+            # leave `arguments:` empty (or only global flags like `--all-features` if you needed them)
+            arguments: |
+            command-arguments: |
+              --config deny.toml
+              --deny warnings
+              licenses
+              sources
 
       - name: Supply-chain & security score (OSSF Scorecard)
         uses: ossf/scorecard-action@v2.4.1
