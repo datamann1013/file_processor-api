@@ -1,0 +1,10 @@
+[bans]
+# your banned crates here
+# e.g. regex-debug = "<any version>"
+
+[sources]
+# allowed registries
+allow = ["crates-io"]
+
+[duplicates]
+deny = true
