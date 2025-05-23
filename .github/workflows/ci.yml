@@ -48,15 +48,6 @@ jobs:
             --config deny.toml
             --deny warnings
 
-      - name: Dependency & license audit (cargo-deny)
-        uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          # Global flags for cargo-deny (e.g., feature combinations)
-          arguments: --all-features
-          # Flags passed specifically to the `check` subcommand
-          command:    check
-          command-arguments: --deny warnings
-
       - name: Supply-chain & security score (OSSF Scorecard)
         uses: ossf/scorecard-action@v2.4.1
         with:
