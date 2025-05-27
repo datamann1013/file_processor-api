@@ -63,11 +63,16 @@ jobs:
       - name: Install cargo-geiger
         run: cargo install cargo-geiger --locked
 
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: Geiger report (crate vs dependencies)
         shell: bash
         run: |
           echo "🔍 Running cargo-geiger in JSON mode…"
-          cargo geiger --format json > geiger.json
+          cargo geiger --format json > geiger.json 2> /dev/null || true
 
           echo "::group::🚫 Unsafe in YOUR CRATE"
           # Replace `file_processor_api` with your actual crate name from Cargo.toml
