@@ -74,9 +74,9 @@ jobs:
         run: |
             echo "🔍 Running cargo-geiger in JSON mode…"
 
-            # Run geiger, merge stderr/stdout, drop only the artifact lines:
-            cargo geiger --format json 2>&1 \
-              | grep -v '^\{"\$message_type"' > geiger.json || true
+            # Run geiger in pure-JSON mode: stdout → geiger.json, all the rest (warnings/artifacts) → stderr
+            cargo geiger --format json > geiger.json 2>geiger.log || true
+            echo "(Any cargo-geiger warnings/artifacts are in geiger.log)"
 
             echo "::group::🚫 Unsafe in YOUR CRATE"
             jq -r '
