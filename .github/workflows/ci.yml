@@ -72,9 +72,9 @@ jobs:
         shell: bash
         run: |
           echo "🔍 Running cargo-geiger in JSON mode…"
-          # Run geiger, drop stderr, then strip out any non‐JSON lines:
-          cargo geiger --format json 2>/dev/null \
-            | grep -E '^\s*[\{\[]' > geiger.json || true
+          # Run geiger, merge stderr/stdout, drop only the artifact lines:
+          cargo geiger --format json 2>&1 \
+            | sed '/^\{"\$message_type"/d' > geiger.json || true
 
           echo "::group::🚫 Unsafe in YOUR CRATE"
           jq -r '
@@ -88,22 +88,26 @@ jobs:
           jq -r '
             .crates[]
             | select(.name!="file_processor_api")
-            | select((.unsafe_expressions+.unsafe_functions)>0)
+            | select((.unsafe_expressions + .unsafe_functions) > 0)
             | "\(.name) – \(.unsafe_expressions)/\(.total_expressions) exprs, \(.unsafe_functions)/\(.total_functions) fns"
           ' geiger.json || echo "(none)"
           echo "::endgroup::"
 
-          # Fail if *your* crate has any unsafe at all:
-          CRATE_UNSAFE=$(jq '.crates[]
-                              | select(.name=="file_processor_api")
-                              | (.unsafe_expressions + .unsafe_functions)' \
-                          geiger.json)
+          # Compute your crate's unsafe total, defaulting to 0 if missing:
+          CRATE_UNSAFE=$(jq -r '
+            (.crates[]
+             | select(.name=="file_processor_api")
+             | (.unsafe_expressions + .unsafe_functions)
+            ) // 0
+          ' geiger.json)
+
           if [ "$CRATE_UNSAFE" -gt 0 ]; then
             echo "❌ Your crate contains $CRATE_UNSAFE unsafe items, failing build."
             exit 1
           else
             echo "✅ Your crate is 100% safe."
           fi
+
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
