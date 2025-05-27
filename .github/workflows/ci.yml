@@ -61,18 +61,41 @@ jobs:
           results_format: 'json'
 
       - name: Install cargo-geiger
-        run: |
-          cargo install cargo-geiger --locked
+        run: cargo install cargo-geiger --locked
 
-      - name: Unsafe in YOUR CRATE
+      - name: Geiger report (crate vs dependencies)
+        shell: bash
         run: |
-          echo "Scanning only your crate (no deps)…"
-          cargo geiger --no-deps --fail-on unsafe-cnt=0
+          echo "🔍 Running cargo-geiger in JSON mode…"
+          cargo geiger --format json > geiger.json
 
-      - name: Unsafe in DEPENDENCIES (informational)
-        run: |
-          echo "Scanning dependencies (including proc-macros & build-scripts)…"
-          cargo geiger || true
+          echo "::group::🚫 Unsafe in YOUR CRATE"
+          # Replace `file_processor_api` with your actual crate name from Cargo.toml
+          jq -r '
+            .crates[]
+            | select(.name=="file_processor_api")
+            | "\(.unsafe_expressions)/\(.total_expressions) unsafe exprs,\(.unsafe_functions)/\(.total_functions) unsafe fns"
+          ' geiger.json
+          echo "::endgroup::"
+
+          echo "::group::ℹ️ Unsafe in DEPENDENCIES"
+          jq -r '
+            .crates[]
+            | select(.name!="file_processor_api")
+            | select(.unsafe_expressions>0 or .unsafe_functions>0)
+            | "\(.name) – \(.unsafe_expressions)/\(.total_expressions) exprs, \(.unsafe_functions)/\(.total_functions) fns"
+          ' geiger.json || echo "(none)"
+          echo "::endgroup::"
+
+          # finally, fail if *your* crate has any unsafe at all:
+          CRATE_UNSAFE=$(jq '.crates[] | select(.name=="file_processor_api") | .unsafe_expressions + .unsafe_functions' geiger.json)
+          if [ "$CRATE_UNSAFE" -gt 0 ]; then
+            echo "❌ Your crate contains $CRATE_UNSAFE unsafe items, failing build."
+            exit 1
+          else
+            echo "✅ Your crate is 100% safe."
+          fi
+
 
 
       - name: Install cargo-fuzz
