@@ -60,17 +60,19 @@ jobs:
           results_file: 'scorecard_results.json'
           results_format: 'json'
 
-      - name: Ban unsafe in crate
+      - name: Install cargo-geiger
         run: |
-          sed -i '1s|^|#![forbid(unsafe_code)]\n|' src/lib.rs
-
-      - name: Unsafe-code detector (cargo-geiger)
-        run: |
-          # install the latest cargo-geiger
           cargo install cargo-geiger --locked
 
-          # only scan YOUR crate (ignore all deps)
+      - name: Unsafe in YOUR CRATE
+        run: |
+          echo "Scanning only your crate (no deps)…"
           cargo geiger --no-deps --fail-on unsafe-cnt=0
+
+      - name: Unsafe in DEPENDENCIES (informational)
+        run: |
+          echo "Scanning dependencies (including proc-macros & build-scripts)…"
+          cargo geiger || true
 
 
       - name: Install cargo-fuzz
