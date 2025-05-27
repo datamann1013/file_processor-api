@@ -64,12 +64,6 @@ jobs:
         run: |
           sed -i '1s|^|#![forbid(unsafe_code)]\n|' src/lib.rs
 
-      - name: Unsafe-code detector (self cargo)
-        uses: actions-rs/geiger@v1
-        with:
-          args: --no-deps --fail-on unsafe-cnt=0
-
-
       - name: Unsafe-code detector (cargo-geiger)
         run: |
           # install the latest cargo-geiger
