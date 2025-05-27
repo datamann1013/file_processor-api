@@ -62,8 +62,8 @@ jobs:
 
       - name: Unsafe-code detector (cargo-geiger)
         run: |
-          cargo install cargo-geiger
-           cargo geiger --no-deps --fail-on unsafe-cnt=0
+          cargo install cargo-geiger --locked
+          cargo geiger --no-deps --fail-on unsafe-cnt=0
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
