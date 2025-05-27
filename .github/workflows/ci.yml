@@ -64,6 +64,11 @@ jobs:
         run: |
           cargo install cargo-geiger --locked
 
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: Geiger report (crate vs dependencies)
         shell: bash
         run: |
