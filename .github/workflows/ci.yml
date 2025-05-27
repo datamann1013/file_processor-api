@@ -72,14 +72,15 @@ jobs:
         shell: bash
         run: |
           echo "🔍 Running cargo-geiger in JSON mode…"
-          cargo geiger --format json > geiger.json 2> /dev/null || true
+          # Run geiger, drop stderr, then strip out any non‐JSON lines:
+          cargo geiger --format json 2>/dev/null \
+            | grep -E '^\s*[\{\[]' > geiger.json || true
 
           echo "::group::🚫 Unsafe in YOUR CRATE"
-          # Replace `file_processor_api` with your actual crate name from Cargo.toml
           jq -r '
             .crates[]
             | select(.name=="file_processor_api")
-            | "\(.unsafe_expressions)/\(.total_expressions) unsafe exprs,\(.unsafe_functions)/\(.total_functions) unsafe fns"
+            | "\(.unsafe_expressions)/\(.total_expressions) unsafe exprs, \(.unsafe_functions)/\(.total_functions) unsafe fns"
           ' geiger.json
           echo "::endgroup::"
 
@@ -87,21 +88,22 @@ jobs:
           jq -r '
             .crates[]
             | select(.name!="file_processor_api")
-            | select(.unsafe_expressions>0 or .unsafe_functions>0)
+            | select((.unsafe_expressions+.unsafe_functions)>0)
             | "\(.name) – \(.unsafe_expressions)/\(.total_expressions) exprs, \(.unsafe_functions)/\(.total_functions) fns"
           ' geiger.json || echo "(none)"
           echo "::endgroup::"
 
-          # finally, fail if *your* crate has any unsafe at all:
-          CRATE_UNSAFE=$(jq '.crates[] | select(.name=="file_processor_api") | .unsafe_expressions + .unsafe_functions' geiger.json)
+          # Fail if *your* crate has any unsafe at all:
+          CRATE_UNSAFE=$(jq '.crates[]
+                              | select(.name=="file_processor_api")
+                              | (.unsafe_expressions + .unsafe_functions)' \
+                          geiger.json)
           if [ "$CRATE_UNSAFE" -gt 0 ]; then
             echo "❌ Your crate contains $CRATE_UNSAFE unsafe items, failing build."
             exit 1
           else
             echo "✅ Your crate is 100% safe."
           fi
-
-
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
