@@ -60,6 +60,16 @@ jobs:
           results_file: 'scorecard_results.json'
           results_format: 'json'
 
+      - name: Ban unsafe in crate
+        run: |
+          sed -i '1s|^|#![forbid(unsafe_code)]\n|' src/lib.rs
+
+      - name: Unsafe-code detector (self cargo)
+        uses: actions-rs/geiger@v1
+        with:
+          args: --no-deps --fail-on unsafe-cnt=0
+
+
       - name: Unsafe-code detector (cargo-geiger)
         run: |
           # install the latest cargo-geiger
