@@ -69,41 +69,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Geiger report (crate vs dependencies)
-        id: geiger
+      - name: Geiger safety check (crate only)
         shell: bash
         run: |
-          echo "🔍 Running cargo-geiger in JSON mode…"
-          cargo geiger --format json > geiger.json 2> geiger.log || true
+          echo "🔍 Running cargo-geiger…"
+          cargo geiger --format json > geiger.json || true
 
-          if ! jq empty geiger.json; then
-            echo "Invalid JSON detected in geiger.json"
-            cat geiger.log
-            exit 1
-          fi
-
-          echo "::group::🚫 Unsafe in YOUR CRATE"
-          jq -r '
-            .crates[]
-            | select(.name=="file_processor_api")
-            | "\(.unsafe_expressions)/\(.total_expressions) unsafe exprs, \(.unsafe_functions)/\(.total_functions) unsafe fns"
-          ' geiger.json
-          echo "::endgroup::"
-
-          echo "::group::ℹ️ Unsafe in DEPENDENCIES"
-          jq -r '
-            .crates[]
-            | select(.name!="file_processor_api")
-            | select((.unsafe_expressions + .unsafe_functions) > 0)
-            | "\(.name) – \(.unsafe_expressions)/\(.total_expressions) exprs, \(.unsafe_functions)/\(.total_functions) fns"
-          ' geiger.json > dependency_unsafe.txt
-          cat dependency_unsafe.txt
-          echo "::endgroup::"
-
-          echo "dependency_unsafe<<EOF" >> $GITHUB_OUTPUT
-          cat dependency_unsafe.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
+          # Extract unsafe count for your crate only
           CRATE_UNSAFE=$(jq -r '
             (.crates[]
              | select(.name=="file_processor_api")
@@ -111,18 +83,10 @@ jobs:
             ) // 0
           ' geiger.json)
 
-          DEP_UNSAFE=$(jq -r '
-            [.crates[]
-             | select(.name!="file_processor_api")
-             | select((.unsafe_expressions + .unsafe_functions) > 0)]
-            | length
-          ' geiger.json)
-
-          echo "dep_unsafe=$DEP_UNSAFE" >> $GITHUB_ENV
-          echo "crate_unsafe=$CRATE_UNSAFE" >> $GITHUB_ENV
+          echo "Unsafe items in crate: $CRATE_UNSAFE"
 
           if [ "$CRATE_UNSAFE" -gt 0 ]; then
-            echo "❌ Your crate contains $CRATE_UNSAFE unsafe items, failing build."
+            echo "❌ Your crate contains $CRATE_UNSAFE unsafe items. Failing build."
             exit 1
           else
             echo "✅ Your crate is 100% safe."
