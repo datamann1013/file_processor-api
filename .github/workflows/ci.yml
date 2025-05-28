@@ -76,31 +76,30 @@ jobs:
         shell: bash
         run: |
           echo "🔍 Running cargo-geiger…"
-          cargo geiger -o geiger.json || true
+          cargo geiger > geiger_output.txt || true
 
-          if ! jq empty geiger.json 2>/dev/null; then
-            echo "❌ geiger.json is not valid JSON. Here's what it contains:"
-            cat geiger.json
-            echo "⚠️ Skipping unsafe check due to invalid output."
+          echo "📄 Geiger output:"
+          cat geiger_output.txt
+
+          # Extract your crate's unsafe summary
+          CRATE_LINE=$(grep -E '^\s*[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+!?\s+file_processor_api' geiger_output.txt || true)
+
+          if [[ -z "$CRATE_LINE" ]]; then
+            echo "⚠️ Could not find your crate in Geiger output. Skipping failure."
             exit 0
           fi
 
-          CRATE_UNSAFE=$(jq -r '
-            (.crates[]
-             | select(.name=="file_processor_api")
-             | (.unsafe_expressions + .unsafe_functions)
-            ) // 0
-          ' geiger.json)
+          echo "📌 Unsafe summary for your crate:"
+          echo "$CRATE_LINE"
 
-          echo "Unsafe items in crate: $CRATE_UNSAFE"
-
-          if [ "$CRATE_UNSAFE" -gt 0 ]; then
-            echo "❌ Your crate contains $CRATE_UNSAFE unsafe items. Failing build."
+          if echo "$CRATE_LINE" | grep -q '!'; then
+            echo "❌ Unsafe code found in your crate. Failing build."
             exit 1
           else
             echo "✅ Your crate is 100% safe."
           fi
-      
+
+
 
       - name: Send email if dependencies are unsafe
         if: env.dep_unsafe != '0'
