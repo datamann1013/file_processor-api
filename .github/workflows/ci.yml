@@ -74,14 +74,15 @@ jobs:
         run: |
           echo "🔍 Running cargo-geiger in JSON mode…"
 
-          # 1) Run geiger:
-          #    - pure JSON → geiger.json (stdout)
-          #    - all warnings/artifacts → geiger.log (stderr)
-          cargo geiger --format json \
-            > geiger.json \
-            2> geiger.log || true
+          # Run geiger, directing JSON output and logs separately
+          cargo geiger --format json > geiger.json 2> geiger.log || true
 
-          echo "(Any cargo-geiger warnings/artifacts are in geiger.log)"
+          # Validate JSON
+          if ! jq empty geiger.json; then
+            echo "Invalid JSON detected in geiger.json"
+            cat geiger.log
+            exit 1
+          fi
 
           echo "::group::🚫 Unsafe in YOUR CRATE"
           jq -r '
@@ -100,7 +101,7 @@ jobs:
           ' geiger.json || echo "(none)"
           echo "::endgroup::"
 
-          # Finally, fail if your own crate has any unsafe at all:
+          # Compute your crate's unsafe total, defaulting to 0 if missing:
           CRATE_UNSAFE=$(jq -r '
             (.crates[]
              | select(.name=="file_processor_api")
