@@ -2,7 +2,10 @@
 
 ![File processor api](/documentation/images/README-header-image.png)
 
-
+![Rust](https://img.shields.io/badge/Rust-1.87.0-blue)
+![License](https://img.shields.io/badge/license-Apache_License_2.0.-green)
+![Version](https://img.shields.io/badge/version-0.1-blue.svg)
+[![CI Pipeline](https://github.com/datamann1013/file_processor-api/actions/workflows/ci.yml/badge.svg)](https://github.com/datamann1013/file_processor-api/actions/workflows/ci.yml)
 ## Overview
 About
 File processor API is a Rust binary that exposes a gRPC endpoint secured by mutual TLS, ment for integration with C#, Java, and C++ backends. It processes file‑transform commands—encrypt/decrypt, compress/decompress, hash, and metadata extraction/modification—via asynchronous Rust runtimes. All logic is encapsulated in a centralized error handler.
