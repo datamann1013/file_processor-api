@@ -73,7 +73,19 @@ jobs:
         shell: bash
         run: |
           echo "🔍 Running cargo-geiger…"
-          cargo geiger --format json > geiger.json || true
+          cargo geiger --format json > geiger.json 2> geiger.log || true
+
+          echo "📄 Contents of geiger.json:"
+          cat geiger.json || echo "⚠️ geiger.json not found"
+
+          echo "📄 Contents of geiger.log:"
+          cat geiger.log || echo "⚠️ geiger.log not found"
+
+          # Validate JSON
+          if ! jq empty geiger.json; then
+            echo "❌ geiger.json is not valid JSON. Aborting."
+            exit 1
+          fi
 
           # Extract unsafe count for your crate only
           CRATE_UNSAFE=$(jq -r '
@@ -91,6 +103,7 @@ jobs:
           else
             echo "✅ Your crate is 100% safe."
           fi
+
 
       - name: Send email if dependencies are unsafe
         if: env.dep_unsafe != '0'
