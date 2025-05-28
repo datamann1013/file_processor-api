@@ -82,7 +82,7 @@ jobs:
           cat geiger_output.txt
 
           # Extract your crate's unsafe summary
-          CRATE_LINE=$(grep -E '^\s*[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+[0-9]+/[0-9]+\s+!?\s+file_processor_api' geiger_output.txt || true)
+          CRATE_LINE=$(grep -E '\s+file_processor_api' geiger_output.txt || true)
 
           if [[ -z "$CRATE_LINE" ]]; then
             echo "⚠️ Could not find your crate in Geiger output. Skipping failure."
@@ -95,9 +95,10 @@ jobs:
           if echo "$CRATE_LINE" | grep -q '!'; then
             echo "❌ Unsafe code found in your crate. Failing build."
             exit 1
-          else
+            else
             echo "✅ Your crate is 100% safe."
           fi
+
 
 
 
