@@ -75,35 +75,47 @@ jobs:
       - name: Geiger safety check (crate only)
         shell: bash
         run: |
-          echo "🔍 Running cargo-geiger…"
           cargo geiger > geiger_output.txt || true
 
-          echo "📄 Geiger output:"
+          echo "Geiger output:"
           cat geiger_output.txt
 
-          # Extract your crate's unsafe summary
           CRATE_LINE=$(grep -E '\s+file_processor_api' geiger_output.txt || true)
 
           if [[ -z "$CRATE_LINE" ]]; then
-            echo "⚠️ Could not find your crate in Geiger output. Skipping failure."
+            echo "Could not find your crate in Geiger output. Skipping failure."
             exit 0
           fi
 
-          echo "📌 Unsafe summary for your crate:"
+          echo "Unsafe summary for your crate:"
           echo "$CRATE_LINE"
 
           if echo "$CRATE_LINE" | grep -q '!'; then
-            echo "❌ Unsafe code found in your crate. Failing build."
+            echo "Unsafe code found in your crate. Failing build."
             exit 1
             else
-            echo "✅ Your crate is 100% safe."
+            echo "Your crate is safe for known issues."
           fi
 
+      - name: Check for unsafe dependencies and send email
+        shell: bash
+        run: |
+            echo "🔍 Checking for unsafe dependencies…"
+            DEP_UNSAFE=$(grep -v 'file_processor_api' geiger_output.txt | grep '!' || true)
 
+            if [[ -n "$DEP_UNSAFE" ]]; then
+              echo "⚠️ Unsafe dependencies found:"
+              echo "$DEP_UNSAFE"
 
+              echo "$DEP_UNSAFE" > dependency_unsafe.txt
+              echo "dep_unsafe=true" >> $GITHUB_ENV
+            else
+              echo "✅ No unsafe dependencies found."
+              echo "dep_unsafe=false" >> $GITHUB_ENV
+            fi
 
-      - name: Send email if dependencies are unsafe
-        if: env.dep_unsafe != '0'
+      - name: Send email if unsafe dependencies are found
+        if: env.dep_unsafe == 'true'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: webmail.ringcom.no
@@ -117,8 +129,7 @@ jobs:
             The following dependencies contain unsafe code:
 
             ${{ steps.geiger.outputs.dependency_unsafe }}
-      
-      
+
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
 
