@@ -74,10 +74,12 @@ jobs:
         run: |
           echo "🔍 Running cargo-geiger in JSON mode…"
 
-          # 1) Run geiger, merge stdout/stderr, filter out the GitHub artifact
-          #    messages (lines that start with {"$message_type") and write clean JSON:
-          cargo geiger --format json 2>&1 \
-            | grep -v '^{"\$message_type"' > geiger.json
+          # 1) Run geiger:
+          #    - pure JSON → geiger.json (stdout)
+          #    - all warnings/artifacts → geiger.log (stderr)
+          cargo geiger --format json \
+            > geiger.json \
+            2> geiger.log || true
 
           echo "(Any cargo-geiger warnings/artifacts are in geiger.log)"
 
@@ -98,7 +100,7 @@ jobs:
           ' geiger.json || echo "(none)"
           echo "::endgroup::"
 
-          # Finally, fail if your crate has any unsafe at all:
+          # Finally, fail if your own crate has any unsafe at all:
           CRATE_UNSAFE=$(jq -r '
             (.crates[]
              | select(.name=="file_processor_api")
@@ -112,7 +114,6 @@ jobs:
           else
             echo "✅ Your crate is 100% safe."
           fi
-
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
