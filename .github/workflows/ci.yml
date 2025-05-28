@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI Pipeline
 
 on:
@@ -38,20 +37,18 @@ jobs:
       - name: Lint with Clippy
         run: cargo clippy -- -D warnings
 
-
       - name: License & Duplicate Check
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
-            manifest-path: ./Cargo.toml
-            log-level: warn
-            command: check
-            # leave `arguments:` empty (or only global flags like `--all-features` if you needed them)
-            arguments: |
-            command-arguments: |
-              --config deny.toml
-              --deny warnings
-              licenses
-              sources
+          manifest-path: ./Cargo.toml
+          log-level: warn
+          command: check
+          arguments: |
+          command-arguments: |
+            --config deny.toml
+            --deny warnings
+            licenses
+            sources
 
       - name: Supply-chain & security score (OSSF Scorecard)
         uses: ossf/scorecard-action@v2.4.1
@@ -62,7 +59,6 @@ jobs:
 
       - name: Install cargo-geiger
         run: cargo install cargo-geiger --locked --force
-
 
       - name: Install jq
         run: |
@@ -75,44 +71,45 @@ jobs:
       - name: Geiger safety check (crate only)
         shell: bash
         run: |
+          echo "🔍 Running cargo-geiger…"
           cargo geiger > geiger_output.txt || true
 
-          echo "Geiger output:"
+          echo "📄 Geiger output:"
           cat geiger_output.txt
 
+          # Check your crate
           CRATE_LINE=$(grep -E '\s+file_processor_api' geiger_output.txt || true)
 
           if [[ -z "$CRATE_LINE" ]]; then
-            echo "Could not find your crate in Geiger output. Skipping failure."
+            echo "⚠️ Could not find your crate in Geiger output. Skipping failure."
             exit 0
           fi
 
-          echo "Unsafe summary for your crate:"
+          echo "📌 Unsafe summary for your crate:"
           echo "$CRATE_LINE"
 
           if echo "$CRATE_LINE" | grep -q '!'; then
-            echo "Unsafe code found in your crate. Failing build."
+            echo "❌ Unsafe code found in your crate. Failing build."
             exit 1
-            else
-            echo "Your crate is safe for known issues."
+          else
+            echo "✅ Your crate is 100% safe."
           fi
 
-      - name: Check for unsafe dependencies and send email
-        shell: bash
+          # Check dependencies
+          grep -v 'file_processor_api' geiger_output.txt | grep '!' > dependency_unsafe.txt || true
+
+          if [[ -s dependency_unsafe.txt ]]; then
+            echo "dep_unsafe=true" >> $GITHUB_ENV
+          else
+            echo "dep_unsafe=false" >> $GITHUB_ENV
+          fi
+
+      - name: Read unsafe dependency list
+        id: read_unsafe_deps
         run: |
-            echo "🔍 Checking for unsafe dependencies…"
-            DEP_UNSAFE=$(grep -v 'file_processor_api' geiger_output.txt | grep '!' || true)
-
-            if [[ -n "$DEP_UNSAFE" ]]; then
-              echo "⚠️ Unsafe dependencies found:"
-              echo "$DEP_UNSAFE"
-
-              echo "$DEP_UNSAFE" > dependency_unsafe.txt
-              echo "dep_unsafe=true" >> $GITHUB_ENV
-            else
-              echo "✅ No unsafe dependencies found."
-              echo "dep_unsafe=false" >> $GITHUB_ENV
-            fi
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat dependency_unsafe.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send email if unsafe dependencies are found
         if: env.dep_unsafe == 'true'
@@ -128,7 +125,7 @@ jobs:
           body: |
             The following dependencies contain unsafe code:
 
-            ${{ steps.geiger.outputs.dependency_unsafe }}
+            ${{ steps.read_unsafe_deps.outputs.body }}
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
