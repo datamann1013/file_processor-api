@@ -64,6 +64,9 @@ async fn main() {
         message: "Test log".into(),
         context: json!({"key": "value"}),
         info_id: None,
+        user_id: Some("user123".into()),
+        session_id: Some("sess456".into()),
+        request_id: Some("req789".into()),
     };
     handler.log_event(log_evt).await.unwrap();
 
@@ -77,6 +80,9 @@ async fn main() {
         code: 0,
         stack_trace: None,
         timestamp: chrono::Utc::now(),
+        user_id: Some("user123".into()),
+        session_id: Some("sess456".into()),
+        request_id: Some("req789".into()),
     };
     handler.log_error(err_evt).await.unwrap();
 

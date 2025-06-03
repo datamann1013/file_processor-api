@@ -48,6 +48,9 @@ fn valid_log_event() -> LogEvent {
         message: "info".into(),
         context: json!({"a":1}),
         info_id: None,
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     }
 }
 
@@ -62,6 +65,9 @@ fn valid_error_event(sev: Severity) -> ErrorEvent {
         message: "valid".into(),
         context: json!({"key":"value"}),
         stack_trace: None,
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     }
 }
 
@@ -212,6 +218,9 @@ async fn serialization_error_returns_json_err() {
         message: String::from_utf8_lossy(&[0xff, 0xff]).into(),
         context: json!({}),
         info_id: None,
+        user_id: Some("user123".into()),
+        session_id: Some("sess456".into()),
+        request_id: Some("req789".into()),
     };
 
     fw.expect_write_jsonl()
@@ -232,6 +241,9 @@ async fn serialization_error_returns_json_err() {
         message: "ok".into(),
         context: serde_json::Value::Null, // still serializable
         info_id: None,
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     };
 
     // Since everything serializes, this will actually succeed:
@@ -263,6 +275,9 @@ async fn log_event_writes_info_only() {
         message: "test".into(),
         context: json!({}),
         info_id: Some("INFO1".into()),
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     };
 
     assert!(handler.log_event(evt).await.is_ok());
