@@ -3,7 +3,7 @@ use crate::error_handler::{BufferManager, DbClient, FileWriter, Severity};
 use serde_json::to_string;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 
 /// Central handler that routes events to buffer, JSONL, and DB
 pub struct Handler<F, B, D>
@@ -42,8 +42,12 @@ where
         }
         // Sanitize and truncate message
         let max_len = 1024;
-        evt.message = evt.message.replace(['\n', '\r', '\t'], " ")
-            .chars().filter(|c| !c.is_control()).collect::<String>();
+        evt.message = evt
+            .message
+            .replace(['\n', '\r', '\t'], " ")
+            .chars()
+            .filter(|c| !c.is_control())
+            .collect::<String>();
         if evt.message.len() > max_len {
             evt.message = evt.message[..max_len].to_string();
         }
@@ -90,7 +94,7 @@ where
             Ok(id) => {
                 debug!(event_id = %evt.event_id, "Message inserted into DB");
                 id
-            },
+            }
             Err(e) => {
                 error!(error = ?e, event_id = %evt.event_id, "DB insert_message failed, falling back to temp file");
                 // Fallback: write full event to temp

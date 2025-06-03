@@ -1,9 +1,9 @@
-use crate::error_handler::types::{ErrorEvent, LogEvent};
 use crate::error_handler::BufferManager;
+use crate::error_handler::types::{ErrorEvent, LogEvent};
 use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::time::{interval, Duration};
+use tokio::time::{Duration, interval};
 
 // WARNING: The use of async Mutex for buffer management is appropriate for most async Rust workloads,
 // but may become a bottleneck under high concurrency. For high-throughput or low-latency systems,
@@ -66,6 +66,9 @@ impl BufferManager for InMemoryBufferManager {
     async fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
         let info = self.info_buffer.lock().await;
         let error = self.error_buffer.lock().await;
-        (info.iter().cloned().collect(), error.iter().cloned().collect())
+        (
+            info.iter().cloned().collect(),
+            error.iter().cloned().collect(),
+        )
     }
 }

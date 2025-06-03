@@ -4,8 +4,8 @@ use lettre::{Message, SmtpTransport, Transport};
 use std::fs::{metadata, rename};
 use std::io::{self};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 
@@ -33,7 +33,16 @@ pub struct SmtpConfig {
 }
 
 impl<F: FileWriter + 'static> SafeFileWriter<F> {
-    pub fn new(inner: F, jsonl_path: PathBuf, temp_path: PathBuf, max_file_size: u64, rate_limit: usize, interval: Duration, alert_threshold: usize, smtp_config: Option<SmtpConfig>) -> Self {
+    pub fn new(
+        inner: F,
+        jsonl_path: PathBuf,
+        temp_path: PathBuf,
+        max_file_size: u64,
+        rate_limit: usize,
+        interval: Duration,
+        alert_threshold: usize,
+        smtp_config: Option<SmtpConfig>,
+    ) -> Self {
         Self {
             inner: Arc::new(inner),
             jsonl_path,
@@ -52,7 +61,8 @@ impl<F: FileWriter + 'static> SafeFileWriter<F> {
     async fn check_and_rotate(&self, path: &PathBuf) -> io::Result<()> {
         if let Ok(meta) = metadata(path) {
             if meta.len() > self.max_file_size {
-                let rotated = path.with_extension(format!("rotated_{}", chrono::Utc::now().timestamp()));
+                let rotated =
+                    path.with_extension(format!("rotated_{}", chrono::Utc::now().timestamp()));
                 rename(path, rotated)?;
             }
         }
@@ -98,11 +108,14 @@ impl<F: FileWriter + 'static> FileWriter for SafeFileWriter<F> {
             Ok(()) => {
                 self.consecutive_failures.store(0, Ordering::Relaxed);
                 Ok(())
-            },
+            }
             Err(e) => {
                 let fails = self.consecutive_failures.fetch_add(1, Ordering::Relaxed) + 1;
                 if fails >= self.alert_threshold {
-                    self.send_alert("Persistent JSONL Write Failure", &format!("{} failures: {}", fails, e));
+                    self.send_alert(
+                        "Persistent JSONL Write Failure",
+                        &format!("{} failures: {}", fails, e),
+                    );
                 }
                 Err(e)
             }
@@ -117,11 +130,14 @@ impl<F: FileWriter + 'static> FileWriter for SafeFileWriter<F> {
             Ok(()) => {
                 self.consecutive_failures.store(0, Ordering::Relaxed);
                 Ok(())
-            },
+            }
             Err(e) => {
                 let fails = self.consecutive_failures.fetch_add(1, Ordering::Relaxed) + 1;
                 if fails >= self.alert_threshold {
-                    self.send_alert("Persistent Temp Write Failure", &format!("{} failures: {}", fails, e));
+                    self.send_alert(
+                        "Persistent Temp Write Failure",
+                        &format!("{} failures: {}", fails, e),
+                    );
                 }
                 Err(e)
             }

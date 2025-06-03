@@ -1,7 +1,7 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 /// Severity levels for events: Error Severe, Error Minor, Warning Severe, Warning Minor
@@ -31,8 +31,7 @@ pub enum Actor {
 }
 
 /// Simple wrapper for informational events
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 pub struct LogEvent {
     pub event_id: Uuid,
     pub timestamp: DateTime<Utc>,
@@ -46,8 +45,7 @@ pub struct LogEvent {
 }
 
 /// Detailed wrapper for warnings & errors
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 pub struct ErrorEvent {
     pub event_id: Uuid,
     pub timestamp: DateTime<Utc>,
@@ -67,7 +65,8 @@ pub struct ErrorEvent {
 impl ErrorEvent {
     /// Sanitize and truncate the message to prevent log injection and DoS
     pub fn sanitize_and_truncate_message(&mut self, max_len: usize) {
-        let sanitized = self.message
+        let sanitized = self
+            .message
             .replace(['\n', '\r', '\t'], " ")
             .chars()
             .filter(|c| !c.is_control())

@@ -19,7 +19,10 @@ pub struct ApiRequest {
 
 impl ApiRequest {
     pub fn new(service_id: ServiceId, payload: Vec<u8>) -> Self {
-        Self { service_id, payload }
+        Self {
+            service_id,
+            payload,
+        }
     }
 }
 

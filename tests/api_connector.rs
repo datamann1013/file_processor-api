@@ -1,8 +1,10 @@
-use std::sync::Arc;
-use file_processor_api::api_connector::{ApiConnector, ApiError, ApiRequest, ApiRouter, Handler, HandlerResult, ServiceId};
-use mockall::*;
-use uuid::Uuid;
+use file_processor_api::api_connector::{
+    ApiConnector, ApiError, ApiRequest, ApiRouter, Handler, HandlerResult, ServiceId,
+};
 use file_processor_api::error_handler::logger::ErrorLogger;
+use mockall::*;
+use std::sync::Arc;
+use uuid::Uuid;
 
 mock! {
     pub Handler {}
@@ -27,13 +29,15 @@ async fn test_routing_to_compression_handler() {
     let error_logger = Arc::new(mock_error_logger);
     let mut router = ApiRouter::new(error_logger.clone());
     let mut comp = MockHandler::new();
-    comp.expect_handle().times(1).returning(|_| Ok(vec![1,2,3]));
+    comp.expect_handle()
+        .times(1)
+        .returning(|_| Ok(vec![1, 2, 3]));
     router.register_handler(ServiceId::Compression, Box::new(comp));
     let api = ApiConnector::new(router);
 
     let req = ApiRequest::new(ServiceId::Compression, vec![0xAA]);
     let resp = api.handle_request(req).await.unwrap();
-    assert_eq!(resp.data, vec![1,2,3]);
+    assert_eq!(resp.data, vec![1, 2, 3]);
 }
 
 #[tokio::test]
@@ -43,19 +47,24 @@ async fn test_routing_to_encryption_handler() {
     let error_logger = Arc::new(mock_error_logger);
     let mut router = ApiRouter::new(error_logger.clone());
     let mut enc = MockHandler::new();
-    enc.expect_handle().times(1).returning(|_| Ok(vec![9,9,9]));
+    enc.expect_handle()
+        .times(1)
+        .returning(|_| Ok(vec![9, 9, 9]));
     router.register_handler(ServiceId::Encryption, Box::new(enc));
     let api = ApiConnector::new(router);
 
     let req = ApiRequest::new(ServiceId::Encryption, vec![0xBB]);
     let resp = api.handle_request(req).await.unwrap();
-    assert_eq!(resp.data, vec![9,9,9]);
+    assert_eq!(resp.data, vec![9, 9, 9]);
 }
 
 #[tokio::test]
 async fn test_unknown_service_id_logs_minor_user_error() {
     let mut mock_error_logger = MockErrorLogger::new();
-    mock_error_logger.expect_log_error().times(1).returning(|_| Ok(()));
+    mock_error_logger
+        .expect_log_error()
+        .times(1)
+        .returning(|_| Ok(()));
     let error_logger = Arc::new(mock_error_logger);
     let mut router = ApiRouter::new(error_logger.clone());
     let api = ApiConnector::new(router);

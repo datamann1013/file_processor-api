@@ -223,15 +223,13 @@ async fn serialization_error_returns_json_err() {
         request_id: Some("req789".into()),
     };
 
-    fw.expect_write_jsonl()
-        .times(1)
-        .returning(|s| {
-            let v: serde_json::Value = serde_json::from_str(s).unwrap();
-            assert_eq!(v["message"], "ok");
-            assert_eq!(v["context"], serde_json::Value::Null);
-            assert_eq!(v["info_id"], serde_json::Value::Null);
-            Ok(())
-        });
+    fw.expect_write_jsonl().times(1).returning(|s| {
+        let v: serde_json::Value = serde_json::from_str(s).unwrap();
+        assert_eq!(v["message"], "ok");
+        assert_eq!(v["context"], serde_json::Value::Null);
+        assert_eq!(v["info_id"], serde_json::Value::Null);
+        Ok(())
+    });
 
     let handler = Handler::new(fw, buf, db);
 
@@ -257,15 +255,13 @@ async fn log_event_writes_info_only() {
     let mut db = MockDbClient::new();
 
     // Expect exactly one JSONL write, DB insert never called
-    fw.expect_write_jsonl()
-        .times(1)
-        .returning(|s| {
-            let v: serde_json::Value = serde_json::from_str(s).unwrap();
-            assert_eq!(v["message"], "test");
-            assert_eq!(v["context"], json!({}));
-            assert_eq!(v["info_id"], "INFO1");
-            Ok(())
-        });
+    fw.expect_write_jsonl().times(1).returning(|s| {
+        let v: serde_json::Value = serde_json::from_str(s).unwrap();
+        assert_eq!(v["message"], "test");
+        assert_eq!(v["context"], json!({}));
+        assert_eq!(v["info_id"], "INFO1");
+        Ok(())
+    });
     db.expect_insert_error().never(); // no DB calls for info-only
 
     let handler = Handler::new(fw, buf, db);

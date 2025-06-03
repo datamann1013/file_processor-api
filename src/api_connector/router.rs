@@ -1,11 +1,11 @@
 use super::types::*;
 use crate::error_handler::logger::ErrorLogger;
-use crate::error_handler::{ErrorEvent, Severity, Component, Actor};
-use serde_json::json;
-use uuid::Uuid;
+use crate::error_handler::{Actor, Component, ErrorEvent, Severity};
 use chrono::Utc;
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 #[async_trait::async_trait]
 pub trait Handler: Send + Sync {
@@ -19,7 +19,10 @@ pub struct ApiRouter {
 
 impl ApiRouter {
     pub fn new(error_handler: Arc<dyn ErrorLogger + Send + Sync>) -> Self {
-        Self { handlers: Mutex::new(HashMap::new()), error_handler }
+        Self {
+            handlers: Mutex::new(HashMap::new()),
+            error_handler,
+        }
     }
     pub fn register_handler(&mut self, id: ServiceId, handler: Box<dyn Handler>) {
         self.handlers.lock().unwrap().insert(id, Arc::from(handler));
@@ -60,7 +63,10 @@ impl ApiConnector {
     }
     pub async fn handle_request(&self, req: ApiRequest) -> Result<ApiResponse, ApiError> {
         match self.router.route(&req).await {
-            Ok(data) => Ok(ApiResponse { data, status: ApiStatus::Ok }),
+            Ok(data) => Ok(ApiResponse {
+                data,
+                status: ApiStatus::Ok,
+            }),
             Err(e) => Err(e),
         }
     }

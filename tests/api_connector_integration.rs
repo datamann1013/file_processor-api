@@ -1,6 +1,6 @@
 use file_processor_api::api_connector::*;
-use file_processor_api::error_handler::{ErrorEvent, Severity, Component, Actor};
 use file_processor_api::error_handler::logger::ErrorLogger;
+use file_processor_api::error_handler::{Actor, Component, ErrorEvent, Severity};
 use mockall::mock;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -27,7 +27,9 @@ async fn test_unknown_service_logs_error_event() {
     mock_error_logger
         .expect_log_error()
         .times(1)
-        .withf(|evt| evt.component == Component::A && evt.severity == Severity::WM && evt.code == 1001)
+        .withf(|evt| {
+            evt.component == Component::A && evt.severity == Severity::WM && evt.code == 1001
+        })
         .returning(|_| Ok(()));
 
     let error_handler = Arc::new(mock_error_logger);
@@ -48,10 +50,13 @@ async fn test_valid_service_does_not_log_error() {
     let mut router = ApiRouter::new(error_handler.clone());
 
     let mut mock_handler = MockHandler::new();
-    mock_handler.expect_handle().times(1).returning(|_| Ok(vec![1,2,3]));
+    mock_handler
+        .expect_handle()
+        .times(1)
+        .returning(|_| Ok(vec![1, 2, 3]));
     router.register_handler(ServiceId::Compression, Box::new(mock_handler));
 
     let req = ApiRequest::new(ServiceId::Compression, vec![0xAA]);
     let result = router.route(&req).await;
-    assert_eq!(result.unwrap(), vec![1,2,3]);
+    assert_eq!(result.unwrap(), vec![1, 2, 3]);
 }
