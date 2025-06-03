@@ -8,8 +8,8 @@ This document captures the agreed design for the **Error Handler** module of `fi
 ### 2. Severity Levels & Routing
 - **Error Severe (ES):** logged immediately to DB and JSONL
 - **Error Minor (EM):** logged to DB; buffered locally until next DB write
-- **Warning Severe (WS):** logged to DB and JSONL
-- **Warning Minor (WM):** logged to JSONL only
+- **Warning Severe (WS):** logged to DB and JSONL 
+- **Warning Minor (WM)**: events are **short-circuited** in the code: they never invoke any DB calls and only go to JSONL.
 - **Info (I_):** logged to JSONL only
 
 ---
@@ -38,8 +38,14 @@ This document captures the agreed design for the **Error Handler** module of `fi
   - e.g. Logfile_C_2025-05-17T14:00:00Z.jsonl
 
 ### 5. In-Memory Buffering & Atomic Snapshot
-- Buffers: last 5 Info entries, last 10 Warnings, all Errors until persisted 
+- Buffers: last 5 Info entries, last 10 Warnings, all Errors until persisted 
 - Snapshot: on Severe Error, atomically write the new error plus buffered context to JSONL
+
+1. Buffer the ErrorEvent
+2. If severity == WM, write JSONL and return
+3. insert_message into DB
+4. insert_error into DB (fallback to write_temp on error)
+5. write_jsonl
 
 ### 6. PostgreSQL Schema
 ```sql
@@ -88,7 +94,7 @@ CREATE INDEX ON errors(code);
   - Else → increment occurrence
 
 ### 7. Retention Strategy
-- Primary: retain errors for 72 hrs uptime 
+- Primary: retain errors for 72 hrs uptime 
 - Fallback: timestamp-based purge via scheduled DB job
 
 ### 8. Security & mTLS
@@ -105,7 +111,13 @@ CREATE INDEX ON errors(code);
 | DB_HOST, DB_PORT    | PostgreSQL connection settings           |         |
 | MTLS_CERT, MTLS_KEY | Paths to mTLS certificate and key        |         |
 
-### 10. Future Improvements
+### 10. Implementation Notes
+- WM short-circuit: returns immediately after JSONL write for Severity::WM. 
+- Fallback logic: both insert_message and insert_error are wrapped to catch failures and call write_temp. 
+- Enum comparability: Severity, Component, and Actor now derive PartialEq/Eq so you can do evt.severity == Severity::WM. 
+- Strict testing: mocks require explicit expectations for each path (DB vs JSONL vs temp write).
+
+### 11. Future Improvements
 - Support external config files (TOML/YAML)
 - Automate mTLS certificate rotation 
 - Encrypt JSONL archives and database at rest 

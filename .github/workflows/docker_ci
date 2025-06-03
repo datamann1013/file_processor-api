@@ -18,6 +18,10 @@ jobs:
   dev-to-test:
     if: github.event.pull_request.base.ref == 'test'
     runs-on: ubuntu-latest
+
+    container:
+     image: ghcr.io/datamann1013/file_processor_api/rust-ci-deps:latest
+
     permissions:
       contents: read
       security-events: write
@@ -130,14 +134,8 @@ jobs:
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
 
-      - name: Set up Rust nightly toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-
       - name: Fuzz testing
-        run: cargo +nightly fuzz run fuzz_target_1 -- -max_total_time=60
+        run: cargo fuzz run -- -max_total_time=60
 
       - name: Run unit tests
         run: cargo test -- --nocapture
