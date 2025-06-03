@@ -4,6 +4,7 @@ pub mod handler;
 pub mod types;
 pub mod writer;
 mod buffer_impl;
+mod safe_writer;
 
 pub use buffer::*;
 pub use dbclient::*;

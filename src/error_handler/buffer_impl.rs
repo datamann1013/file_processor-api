@@ -5,6 +5,9 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{interval, Duration};
 
+// WARNING: The use of async Mutex for buffer management is appropriate for most async Rust workloads,
+// but may become a bottleneck under high concurrency. For high-throughput or low-latency systems,
+// consider using lock-free or sharded data structures (e.g., dashmap, crossbeam) to reduce contention.
 pub struct InMemoryBufferManager {
     info_buffer: Mutex<VecDeque<LogEvent>>,
     error_buffer: Mutex<VecDeque<ErrorEvent>>,

@@ -38,6 +38,10 @@ pub struct LogEvent {
     pub message: String,
     pub context: Value,
     pub info_id: Option<String>,
+    // Enhanced context fields
+    pub user_id: Option<String>,
+    pub session_id: Option<String>,
+    pub request_id: Option<String>,
 }
 
 /// Detailed wrapper for warnings & errors
@@ -53,6 +57,53 @@ pub struct ErrorEvent {
     pub message: String,
     pub context: Value,
     pub stack_trace: Option<Value>,
+    // Enhanced context fields
+    pub user_id: Option<String>,
+    pub session_id: Option<String>,
+    pub request_id: Option<String>,
+}
+
+impl ErrorEvent {
+    /// Sanitize and truncate the message to prevent log injection and DoS
+    pub fn sanitize_and_truncate_message(&mut self, max_len: usize) {
+        let sanitized = self.message
+            .replace(['\n', '\r', '\t'], " ")
+            .chars()
+            .filter(|c| !c.is_control())
+            .collect::<String>();
+        self.message = if sanitized.len() > max_len {
+            sanitized[..max_len].to_string()
+        } else {
+            sanitized
+        };
+    }
+    /// Redact sensitive fields in context and stack_trace
+    pub fn redact_sensitive_data(&mut self) {
+        // Example: redact fields named "password", "token", "secret"
+        fn redact_value(val: &mut Value) {
+            match val {
+                Value::Object(map) => {
+                    for (k, v) in map.iter_mut() {
+                        if ["password", "token", "secret"].contains(&k.as_str()) {
+                            *v = Value::String("***REDACTED***".to_string());
+                        } else {
+                            redact_value(v);
+                        }
+                    }
+                }
+                Value::Array(arr) => {
+                    for v in arr.iter_mut() {
+                        redact_value(v);
+                    }
+                }
+                _ => {}
+            }
+        }
+        redact_value(&mut self.context);
+        if let Some(ref mut st) = self.stack_trace {
+            redact_value(st);
+        }
+    }
 }
 
 /// Errors returned by the handler entrypoint
