@@ -1,14 +1,15 @@
 use async_trait::async_trait;
+use file_processor_api::api_connector::{
+    ApiConnector, ApiError, ApiRequest, ApiResponse, ApiRouter, Handler as ApiHandler,
+    HandlerResult, ServiceId,
+};
+use file_processor_api::error_handler::logger::ErrorLogger;
 use file_processor_api::error_handler::{
     Actor, BufferManager, Component, DbClient, ErrorEvent, FileWriter, Handler, LogEvent, Severity,
 };
-use file_processor_api::error_handler::logger::ErrorLogger;
-use file_processor_api::api_connector::{
-    ApiRouter, ApiConnector, Handler as ApiHandler, HandlerResult, ServiceId, ApiRequest, ApiResponse, ApiError
-};
 use serde_json::json;
-use uuid::Uuid;
 use std::sync::Arc;
+use uuid::Uuid;
 
 // Dummy implementations for error handler traits
 struct DummyWriter;
