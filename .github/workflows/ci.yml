@@ -130,8 +130,14 @@ jobs:
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
 
+      - name: Set up Rust nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
       - name: Fuzz testing
-        run: cargo fuzz run fuzz_target_1.rs -- -max_total_time=60
+        run: cargo +nightly fuzz run fuzz_target_1 -- -max_total_time=60
 
       - name: Run unit tests
         run: cargo test -- --nocapture
