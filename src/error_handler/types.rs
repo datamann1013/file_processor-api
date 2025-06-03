@@ -16,9 +16,10 @@ pub enum Severity {
 /// Components of the system: Compression, Hashing, Encryption
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Component {
-    C,
-    H,
-    E,
+    C, //Compression
+    H, //Hashing
+    E, //Error
+    A, //API connector
 } // directory‑based modules recommended for organization 
 
 /// Actors responsible: User, Server, Network

@@ -1,6 +1,8 @@
+use std::sync::Arc;
 use file_processor_api::api_connector::{ApiConnector, ApiError, ApiRequest, ApiRouter, Handler, HandlerResult, ServiceId};
 use mockall::*;
 use uuid::Uuid;
+use file_processor_api::error_handler::logger::ErrorLogger;
 
 mock! {
     pub Handler {}
@@ -10,9 +12,20 @@ mock! {
     }
 }
 
+mock! {
+    pub ErrorLogger {}
+    #[async_trait::async_trait]
+    impl ErrorLogger for ErrorLogger {
+        async fn log_error(&self, evt: file_processor_api::error_handler::ErrorEvent) -> Result<(), ()>;
+    }
+}
+
 #[tokio::test]
 async fn test_routing_to_compression_handler() {
-    let mut router = ApiRouter::new();
+    let mut mock_error_logger = MockErrorLogger::new();
+    mock_error_logger.expect_log_error().times(0);
+    let error_logger = Arc::new(mock_error_logger);
+    let mut router = ApiRouter::new(error_logger.clone());
     let mut comp = MockHandler::new();
     comp.expect_handle().times(1).returning(|_| Ok(vec![1,2,3]));
     router.register_handler(ServiceId::Compression, Box::new(comp));
@@ -25,7 +38,10 @@ async fn test_routing_to_compression_handler() {
 
 #[tokio::test]
 async fn test_routing_to_encryption_handler() {
-    let mut router = ApiRouter::new();
+    let mut mock_error_logger = MockErrorLogger::new();
+    mock_error_logger.expect_log_error().times(0);
+    let error_logger = Arc::new(mock_error_logger);
+    let mut router = ApiRouter::new(error_logger.clone());
     let mut enc = MockHandler::new();
     enc.expect_handle().times(1).returning(|_| Ok(vec![9,9,9]));
     router.register_handler(ServiceId::Encryption, Box::new(enc));
@@ -38,7 +54,10 @@ async fn test_routing_to_encryption_handler() {
 
 #[tokio::test]
 async fn test_unknown_service_id_logs_minor_user_error() {
-    let mut router = ApiRouter::new();
+    let mut mock_error_logger = MockErrorLogger::new();
+    mock_error_logger.expect_log_error().times(1).returning(|_| Ok(()));
+    let error_logger = Arc::new(mock_error_logger);
+    let mut router = ApiRouter::new(error_logger.clone());
     let api = ApiConnector::new(router);
 
     let unknown_id = ServiceId::Unknown(Uuid::new_v4());
@@ -62,7 +81,10 @@ async fn test_extensibility_register_new_handler() {
             Ok(vec![42])
         }
     }
-    let mut router = ApiRouter::new();
+    let mut mock_error_logger = MockErrorLogger::new();
+    mock_error_logger.expect_log_error().times(0);
+    let error_logger = Arc::new(mock_error_logger);
+    let mut router = ApiRouter::new(error_logger.clone());
     router.register_handler(ServiceId::Custom("dummy".into()), Box::new(DummyHandler));
     let api = ApiConnector::new(router);
 

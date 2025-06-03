@@ -17,6 +17,8 @@ where
     pub db: Arc<D>,
 }
 
+use super::logger::ErrorLogger;
+
 impl<F, B, D> Handler<F, B, D>
 where
     F: FileWriter + 'static,
@@ -124,3 +126,15 @@ where
         guard.snapshot().await
     }
 } // spawns background rotation task separately
+
+#[async_trait::async_trait]
+impl<F, B, D> ErrorLogger for Handler<F, B, D>
+where
+    F: FileWriter + 'static,
+    B: BufferManager + 'static,
+    D: DbClient + 'static,
+{
+    async fn log_error(&self, evt: crate::error_handler::types::ErrorEvent) -> Result<(), ()> {
+        Handler::log_error(self, evt).await.map_err(|_| ())
+    }
+}

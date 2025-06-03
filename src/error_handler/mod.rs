@@ -5,6 +5,7 @@ pub mod types;
 pub mod writer;
 mod buffer_impl;
 mod safe_writer;
+pub mod logger;
 
 pub use buffer::*;
 pub use dbclient::*;

@@ -82,6 +82,30 @@ flowchart TD
   - Logging of minor user errors.
   - mTLS handshake and secure communication.
 
+## Future improvements
+1. gRPC and mTLS Implementation
+   - Implement the actual gRPC server using tonic. 
+   - Implement mTLS configuration and enforcement in the server.
+2. Error Handler Integration 
+   - Wire up the router and connector to call the centralized error handler for all errors, especially unknown service requests.
+3. Audit Logging 
+   - Ensure all requests (including successful ones) are logged for audit purposes, with user/session/request context.
+4. Proto File and Codegen
+   - Add a proto file for the API and use tonic-build for code generation.
+5. Handler Registration API
+   - Consider a more dynamic or config-driven handler registration mechanism for easier extensibility.
+6. Context Propagation
+   - Add user/session/request context fields to ApiRequest and ensure they are passed to the error handler and audit logs.
+7. Security Hardening
+   - Enforce strict mTLS (reject unauthenticated clients). 
+   - Add rate limiting and request validation.
+8. Graceful Shutdown and Health Checks
+   - Implement graceful shutdown for the gRPC server. 
+   - Add a health check endpoint.
+9. Metrics and Observability
+   - Expose Prometheus metrics for request counts, error rates, etc.
+10. Comprehensive Integration Tests
+    - Add integration tests for the full gRPC/mTLS flow, not just unit tests.
 ---
 
 This modular API Connector design ensures secure, auditable, and maintainable routing for all file processing requests in the file_processor_api system.
