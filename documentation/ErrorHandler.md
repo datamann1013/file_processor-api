@@ -126,3 +126,9 @@ CREATE INDEX ON errors(code);
 - Extend retention policies per severity 
 - Develop web UI dashboard for log browsing 
 - Offload JSONL archives to object storage
+- Digital signatures or checksums for tamper/tampering detection. 
+- Automated cleanup of old rotated files (only rotation is implemented). 
+- Distributed/global rate limiting (current is per-process). 
+- Deep, context-aware redaction of all possible sensitive data. 
+- Integration with non-SMTP alerting systems. 
+- Lock-free or sharded buffer management for extreme concurrency.

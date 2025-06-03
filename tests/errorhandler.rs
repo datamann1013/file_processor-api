@@ -20,11 +20,12 @@ mock! {
 
 mock! {
     pub BufferManager {}
+    #[async_trait::async_trait]
     impl BufferManager for BufferManager {
-        fn buffer_info(&self, event: &LogEvent);
-        fn buffer_warning(&self, event: &ErrorEvent);
-        fn buffer_error(&self, event: &ErrorEvent);
-        fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>);
+        async fn buffer_info(&self, event: &LogEvent);
+        async fn buffer_warning(&self, event: &ErrorEvent);
+        async fn buffer_error(&self, event: &ErrorEvent);
+        async fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>);
     }
 }
 
@@ -42,14 +43,21 @@ mock! {
 
 fn valid_log_event() -> LogEvent {
     LogEvent {
+        event_id: Uuid::new_v4(),
+        timestamp: chrono::Utc::now(),
         message: "info".into(),
         context: json!({"a":1}),
         info_id: None,
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     }
 }
 
 fn valid_error_event(sev: Severity) -> ErrorEvent {
     ErrorEvent {
+        event_id: Uuid::new_v4(),
+        timestamp: chrono::Utc::now(),
         severity: sev,
         component: Component::C,
         actor: Actor::U,
@@ -57,6 +65,9 @@ fn valid_error_event(sev: Severity) -> ErrorEvent {
         message: "valid".into(),
         context: json!({"key":"value"}),
         stack_trace: None,
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     }
 }
 
@@ -102,7 +113,7 @@ async fn log_error_all_severities() {
         let mut db = MockDbClient::new();
 
         // Buffer must be called once per error
-        buf.expect_buffer_error().times(1).return_const(());
+        buf.expect_buffer_error().times(1).returning(|_| ());
         // Only WS and ES/EM write DB
         if matches!(sev, Severity::ES | Severity::EM | Severity::WS) {
             db.expect_insert_message()
@@ -131,7 +142,7 @@ async fn log_error_db_fail_fallback() {
     let mut buf = MockBufferManager::new();
     let mut db = MockDbClient::new();
 
-    buf.expect_buffer_error().times(1).return_const(());
+    buf.expect_buffer_error().times(1).returning(|_| ());
     db.expect_insert_message()
         .times(1)
         .returning(|_| Ok(Uuid::new_v4()));
@@ -154,7 +165,7 @@ async fn log_error_message_fail_fallback() {
     let mut buf = MockBufferManager::new();
     let mut db = MockDbClient::new();
 
-    buf.expect_buffer_error().times(1).return_const(());
+    buf.expect_buffer_error().times(1).returning(|_| ());
     db.expect_insert_message()
         .times(1)
         .returning(|_| Err(sqlx::Error::RowNotFound));
@@ -174,7 +185,7 @@ async fn log_error_replay_temp_then_success() {
     let mut buf = MockBufferManager::new();
     let mut db = MockDbClient::new();
 
-    buf.expect_buffer_error().times(1).return_const(());
+    buf.expect_buffer_error().times(1).returning(|_| ());
     // Simulate existing temp lines: replay_temp called first
     db.expect_replay_temp().times(1).returning(|_l| Ok(()));
     db.expect_insert_message()
@@ -202,22 +213,35 @@ async fn serialization_error_returns_json_err() {
 
     // Create LogEvent with non-UTF8 (simulate via invalid JSON string)
     LogEvent {
+        event_id: Uuid::new_v4(),
+        timestamp: chrono::Utc::now(),
         message: String::from_utf8_lossy(&[0xff, 0xff]).into(),
         context: json!({}),
         info_id: None,
+        user_id: Some("user123".into()),
+        session_id: Some("sess456".into()),
+        request_id: Some("req789".into()),
     };
 
-    fw.expect_write_jsonl()
-        .with(eq(r#"{"message":"ok","context":null,"info_id":null}"#))
-        .times(1)
-        .returning(|_| Ok(()));
+    fw.expect_write_jsonl().times(1).returning(|s| {
+        let v: serde_json::Value = serde_json::from_str(s).unwrap();
+        assert_eq!(v["message"], "ok");
+        assert_eq!(v["context"], serde_json::Value::Null);
+        assert_eq!(v["info_id"], serde_json::Value::Null);
+        Ok(())
+    });
 
     let handler = Handler::new(fw, buf, db);
 
     let evt = LogEvent {
+        event_id: Uuid::new_v4(),
+        timestamp: chrono::Utc::now(),
         message: "ok".into(),
         context: serde_json::Value::Null, // still serializable
         info_id: None,
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     };
 
     // Since everything serializes, this will actually succeed:
@@ -231,17 +255,25 @@ async fn log_event_writes_info_only() {
     let mut db = MockDbClient::new();
 
     // Expect exactly one JSONL write, DB insert never called
-    fw.expect_write_jsonl()
-        .times(1)
-        .with(eq(r#"{"message":"test","context":{},"info_id":"INFO1"}"#))
-        .returning(|_| Ok(()));
+    fw.expect_write_jsonl().times(1).returning(|s| {
+        let v: serde_json::Value = serde_json::from_str(s).unwrap();
+        assert_eq!(v["message"], "test");
+        assert_eq!(v["context"], json!({}));
+        assert_eq!(v["info_id"], "INFO1");
+        Ok(())
+    });
     db.expect_insert_error().never(); // no DB calls for info-only
 
     let handler = Handler::new(fw, buf, db);
     let evt = LogEvent {
+        event_id: Uuid::new_v4(),
+        timestamp: chrono::Utc::now(),
         message: "test".into(),
         context: json!({}),
         info_id: Some("INFO1".into()),
+        user_id: Some("test_user".into()),
+        session_id: Some("test_session".into()),
+        request_id: Some("test_request".into()),
     };
 
     assert!(handler.log_event(evt).await.is_ok());
@@ -268,7 +300,7 @@ async fn log_error_db_failure_falls_back_to_file() {
     let mut db = MockDbClient::new();
 
     // Must buffer first
-    buf.expect_buffer_error().times(1).return_const(());
+    buf.expect_buffer_error().times(1).returning(|_| ());
 
     // Simulate insert_message success
     db.expect_insert_message()

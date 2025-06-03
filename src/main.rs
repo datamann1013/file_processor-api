@@ -1,11 +1,17 @@
 use async_trait::async_trait;
+use file_processor_api::api_connector::{
+    ApiConnector, ApiError, ApiRequest, ApiResponse, ApiRouter, Handler as ApiHandler,
+    HandlerResult, ServiceId,
+};
+use file_processor_api::error_handler::logger::ErrorLogger;
 use file_processor_api::error_handler::{
     Actor, BufferManager, Component, DbClient, ErrorEvent, FileWriter, Handler, LogEvent, Severity,
 };
 use serde_json::json;
+use std::sync::Arc;
 use uuid::Uuid;
 
-// Dummy implementations for traits
+// Dummy implementations for error handler traits
 struct DummyWriter;
 #[async_trait]
 impl FileWriter for DummyWriter {
@@ -20,18 +26,18 @@ impl FileWriter for DummyWriter {
 }
 
 struct DummyBuffer;
+#[async_trait]
 impl BufferManager for DummyBuffer {
-    fn buffer_info(&self, event: &LogEvent) {
+    async fn buffer_info(&self, event: &LogEvent) {
         println!("Buffering info: {:?}", event);
     }
-    fn buffer_warning(&self, event: &ErrorEvent) {
+    async fn buffer_warning(&self, event: &ErrorEvent) {
         println!("Buffering warning: {:?}", event);
     }
-
-    fn buffer_error(&self, event: &ErrorEvent) {
+    async fn buffer_error(&self, event: &ErrorEvent) {
         println!("Buffering error: {:?}", event);
     }
-    fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
+    async fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
         (vec![], vec![])
     }
 }
@@ -44,7 +50,6 @@ impl DbClient for DummyDb {
         Ok(Uuid::new_v4())
     }
     async fn insert_error(&self, evt: &ErrorEvent, msg_id: Uuid) -> Result<(), sqlx::Error> {
-        // your logic here…
         println!("Inserting error for msg_id={} evt={:?}", msg_id, evt);
         Ok(())
     }
@@ -54,29 +59,40 @@ impl DbClient for DummyDb {
     }
 }
 
+// Dummy API handler for demonstration
+struct DummyApiHandler;
+#[async_trait]
+impl ApiHandler for DummyApiHandler {
+    async fn handle(&self, req: &[u8]) -> HandlerResult {
+        println!("DummyApiHandler received: {:?}", req);
+        Ok(vec![42, 43, 44])
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    // Set up error handler
     let handler = Handler::new(DummyWriter, DummyBuffer, DummyDb);
+    let error_logger: Arc<dyn ErrorLogger + Send + Sync> = Arc::new(handler);
 
-    let log_evt = LogEvent {
-        message: "Test log".into(),
-        context: json!({"key": "value"}),
-        info_id: None,
-    };
-    handler.log_event(log_evt).await.unwrap();
+    // Set up API router and connector
+    let mut router = ApiRouter::new(error_logger.clone());
+    router.register_handler(ServiceId::Compression, Box::new(DummyApiHandler));
+    let api = ApiConnector::new(router);
 
-    let err_evt = ErrorEvent {
-        message: "Test error".into(),
-        context: Default::default(),
-        severity: Severity::EM,
-        component: Component::H,
-        actor: Actor::S,
-        code: 0,
-        stack_trace: None,
-    };
-    handler.log_error(err_evt).await.unwrap();
+    // Use: valid service request
+    let req = ApiRequest::new(ServiceId::Compression, vec![1, 2, 3]);
+    match api.handle_request(req).await {
+        Ok(ApiResponse { data, status }) => {
+            println!("API Response: {:?}, Status: {:?}", data, status);
+        }
+        Err(e) => println!("API Error: {:?}", e),
+    }
 
-    let (infos, errors) = handler.snapshot().await;
-
-    println!("Snapshots - infos: {:?}, errors: {:?}", infos, errors);
+    // Use: unknown service request (should log error via error handler)
+    let req = ApiRequest::new(ServiceId::Unknown(Uuid::new_v4()), vec![]);
+    match api.handle_request(req).await {
+        Ok(resp) => println!("Unexpected success: {:?}", resp),
+        Err(e) => println!("API Error (expected unknown service): {:?}", e),
+    }
 }
