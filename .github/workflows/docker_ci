@@ -18,6 +18,10 @@ jobs:
   dev-to-test:
     if: github.event.pull_request.base.ref == 'test'
     runs-on: ubuntu-latest
+
+    container:
+     image: ghcr.io/datamann1013/file_processor_api/rust-ci-deps:latest
+
     permissions:
       contents: read
       security-events: write
