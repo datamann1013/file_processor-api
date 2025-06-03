@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
+use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 /// Severity levels for events: Error Severe, Error Minor, Warning Severe, Warning Minor
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,7 +31,10 @@ pub enum Actor {
 
 /// Simple wrapper for informational events
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct LogEvent {
+    pub event_id: Uuid,
+    pub timestamp: DateTime<Utc>,
     pub message: String,
     pub context: Value,
     pub info_id: Option<String>,
@@ -37,7 +42,10 @@ pub struct LogEvent {
 
 /// Detailed wrapper for warnings & errors
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct ErrorEvent {
+    pub event_id: Uuid,
+    pub timestamp: DateTime<Utc>,
     pub severity: Severity,
     pub component: Component,
     pub actor: Actor,

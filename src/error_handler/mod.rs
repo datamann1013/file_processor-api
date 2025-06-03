@@ -3,6 +3,7 @@ pub mod dbclient;
 pub mod handler;
 pub mod types;
 pub mod writer;
+mod buffer_impl;
 
 pub use buffer::*;
 pub use dbclient::*;

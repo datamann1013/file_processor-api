@@ -20,18 +20,18 @@ impl FileWriter for DummyWriter {
 }
 
 struct DummyBuffer;
+#[async_trait]
 impl BufferManager for DummyBuffer {
-    fn buffer_info(&self, event: &LogEvent) {
+    async fn buffer_info(&self, event: &LogEvent) {
         println!("Buffering info: {:?}", event);
     }
-    fn buffer_warning(&self, event: &ErrorEvent) {
+    async fn buffer_warning(&self, event: &ErrorEvent) {
         println!("Buffering warning: {:?}", event);
     }
-
-    fn buffer_error(&self, event: &ErrorEvent) {
+    async fn buffer_error(&self, event: &ErrorEvent) {
         println!("Buffering error: {:?}", event);
     }
-    fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
+    async fn snapshot(&self) -> (Vec<LogEvent>, Vec<ErrorEvent>) {
         (vec![], vec![])
     }
 }
@@ -59,6 +59,8 @@ async fn main() {
     let handler = Handler::new(DummyWriter, DummyBuffer, DummyDb);
 
     let log_evt = LogEvent {
+        event_id: Uuid::new_v4(),
+        timestamp: chrono::Utc::now(),
         message: "Test log".into(),
         context: json!({"key": "value"}),
         info_id: None,
@@ -66,13 +68,15 @@ async fn main() {
     handler.log_event(log_evt).await.unwrap();
 
     let err_evt = ErrorEvent {
+        event_id: Uuid::new_v4(),
         message: "Test error".into(),
-        context: Default::default(),
+        context: json!({}),
         severity: Severity::EM,
         component: Component::H,
         actor: Actor::S,
         code: 0,
         stack_trace: None,
+        timestamp: chrono::Utc::now(),
     };
     handler.log_error(err_evt).await.unwrap();
 
